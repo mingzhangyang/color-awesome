@@ -21,7 +21,6 @@ export class ColorCollection {
   getElement(id) {
     return this.container ? this.container.querySelector(`#${id}`) : null
   }
-}
 
   migrateDataIfNeeded() {
     const currentVersion = localStorage.getItem('colorAwesome_version') || '1.0.0'
@@ -185,7 +184,7 @@ export class ColorCollection {
     document.querySelectorAll('.view-toggle').forEach(btn => {
       btn.addEventListener('click', (e) => {
         this.currentView = e.target.getAttribute('data-view')
-        this.render(this.getElement('main-content'))
+        this.render(document.getElementById('main-content'))
       })
     })
 
@@ -265,7 +264,7 @@ export class ColorCollection {
         contentArea.innerHTML = `
           <div class="text-center py-12">
             <p class="text-gray-600">No colors match your current filters.</p>
-            <button class="btn-secondary mt-2" onclick="this.getElement('search-input').value = ''; this.searchQuery = ''; this.renderContent()">
+            <button class="btn-secondary mt-2" id="clear-filters-btn">
               Clear Filters
             </button>
           </div>
@@ -296,7 +295,7 @@ export class ColorCollection {
         contentArea.innerHTML = `
           <div class="text-center py-12">
             <p class="text-gray-600">No palettes match your current filters.</p>
-            <button class="btn-secondary mt-2" onclick="this.getElement('search-input').value = ''; this.searchQuery = ''; this.renderContent()">
+            <button class="btn-secondary mt-2" id="clear-filters-palettes-btn">
               Clear Filters
             </button>
           </div>
@@ -641,7 +640,7 @@ export class ColorCollection {
               localStorage.setItem('savedPalettes', JSON.stringify(this.savedPalettes))
             }
             
-            this.render(this.getElement('main-content'))
+            this.render(document.getElementById('main-content'))
             this.showToast('Data imported successfully!')
           } catch (error) {
             alert('Invalid file format!')
