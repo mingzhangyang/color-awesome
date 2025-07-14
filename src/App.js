@@ -1,17 +1,77 @@
 import { Navigation } from './components/Navigation.js'
+import { MobileNavigation } from './components/MobileNavigation.js'
 import { ColorConverter } from './components/ColorConverter.js'
 import { ImageColorPicker } from './components/ImageColorPicker.js'
 import { ColorCollection } from './components/ColorCollection.js'
+import { KeyboardShortcuts } from './utils/KeyboardShortcuts.js'
+import { UIEnhancements } from './utils/UIEnhancements.js'
+import { PerformanceOptimizer } from './utils/PerformanceOptimizer.js'
 
 export class App {
   constructor() {
     this.currentView = 'converter'
     this.appElement = document.getElementById('app')
+    this.previousView = null
+    this.isTransitioning = false
   }
 
   init() {
     this.render()
     this.setupEventListeners()
+    this.initializeEnhancements()
+  }
+
+  initializeEnhancements() {
+    // Initialize keyboard shortcuts
+    this.keyboardShortcuts = new KeyboardShortcuts(this)
+    
+    // Initialize UI enhancements
+    this.uiEnhancements = new UIEnhancements()
+    
+    // Initialize performance optimizer
+    this.performanceOptimizer = new PerformanceOptimizer()
+    
+    // Add global accessibility improvements
+    this.setupAccessibility()
+  }
+
+  setupAccessibility() {
+    // Add focus trap for modals
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Tab') {
+        this.handleTabNavigation(e)
+      }
+    })
+    
+    // Add focus indicators
+    document.addEventListener('focusin', (e) => {
+      if (e.target.matches('button, input, select, textarea, [tabindex]')) {
+        e.target.classList.add('focus-ring')
+      }
+    })
+    
+    document.addEventListener('focusout', (e) => {
+      e.target.classList.remove('focus-ring')
+    })
+  }
+
+  handleTabNavigation(e) {
+    const modal = document.querySelector('.modal:not(.hidden), [role="dialog"]:not(.hidden)')
+    if (modal) {
+      const focusableElements = modal.querySelectorAll(
+        'button, input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      )
+      const firstElement = focusableElements[0]
+      const lastElement = focusableElements[focusableElements.length - 1]
+      
+      if (e.shiftKey && document.activeElement === firstElement) {
+        e.preventDefault()
+        lastElement.focus()
+      } else if (!e.shiftKey && document.activeElement === lastElement) {
+        e.preventDefault()
+        firstElement.focus()
+      }
+    }
   }
 
   render() {
@@ -55,42 +115,173 @@ export class App {
     // Initialize navigation
     const navigation = new Navigation(this.currentView, (view) => this.switchView(view))
     navigation.render()
+    
+    // Initialize mobile navigation
+    this.mobileNavigation = new MobileNavigation(this.currentView, (view) => this.switchView(view))
+    this.mobileNavigation.render()
 
     // Initialize current view
     this.renderCurrentView()
   }
 
   renderCurrentView() {
-    const contentElement = document.getElementById('main-content')
+    if (this.isTransitioning) return
     
-    switch (this.currentView) {
-      case 'converter':
-        const converter = new ColorConverter()
-        converter.render(contentElement)
-        break
-      case 'image-picker':
-        const imagePicker = new ImageColorPicker()
-        imagePicker.render(contentElement)
-        break
-      case 'collection':
-        const collection = new ColorCollection()
-        collection.render(contentElement)
-        break
-      default:
-        contentElement.innerHTML = '<div class="text-center">View not found</div>'
-    }
+    const contentElement = document.getElementById('main-content')
+    const currentElement = contentElement.firstElementChild
+    
+    // Create new content container
+    const newContent = document.createElement('div')
+    newContent.className = 'view-content'
+    
+    this.isTransitioning = true
+    
+    // Show loading state
+    this.uiEnhancements.setLoading(contentElement, true)
+    
+    // Simulate component initialization time
+    setTimeout(() => {
+      switch (this.currentView) {
+        case 'converter':
+          const converter = new ColorConverter()
+          converter.render(newContent)
+          break
+        case 'image-picker':
+          const imagePicker = new ImageColorPicker()
+          imagePicker.render(newContent)
+          break
+        case 'collection':
+          const collection = new ColorCollection()
+          collection.render(newContent)
+          break
+        default:
+          newContent.innerHTML = '<div class="text-center">View not found</div>'
+      }
+      
+      // Remove loading state
+      this.uiEnhancements.setLoading(contentElement, false)
+      
+      // Perform transition
+      this.uiEnhancements.transitionToView(
+        currentElement, 
+        newContent, 
+        this.getTransitionDirection()
+      ).then(() => {
+        contentElement.innerHTML = ''
+        contentElement.appendChild(newContent)
+        
+        // Enhance new content with animations and interactions
+        this.uiEnhancements.enhanceNewContent(newContent)
+        
+        this.isTransitioning = false
+      })
+    }, 150) // Small delay for better UX
+  }
+
+  getTransitionDirection() {
+    const viewOrder = ['converter', 'image-picker', 'collection']
+    const currentIndex = viewOrder.indexOf(this.currentView)
+    const previousIndex = viewOrder.indexOf(this.previousView)
+    
+    if (previousIndex === -1) return 'left'
+    return currentIndex > previousIndex ? 'left' : 'right'
   }
 
   switchView(view) {
+    if (this.isTransitioning || view === this.currentView) return
+    
+    this.previousView = this.currentView
     this.currentView = view
     this.renderCurrentView()
+    
+    // Update mobile navigation
+    if (this.mobileNavigation) {
+      this.mobileNavigation.updateActiveView(view)
+    }
+    
+    // Update URL without page reload (if using hash routing)
+    if (window.location.hash !== `#${view}`) {
+      window.history.pushState({ view }, '', `#${view}`)
+    }
   }
 
   setupEventListeners() {
-    // Global event listeners can go here
+    // Global event listeners
     window.addEventListener('beforeunload', () => {
       // Save any pending data before page unload
       console.log('Saving data before page unload...')
     })
+    
+    // Handle browser back/forward buttons
+    window.addEventListener('popstate', (e) => {
+      if (e.state && e.state.view) {
+        this.previousView = this.currentView
+        this.currentView = e.state.view
+        this.renderCurrentView()
+      }
+    })
+    
+    // Handle hash changes for direct navigation
+    window.addEventListener('hashchange', () => {
+      const hash = window.location.hash.slice(1)
+      const validViews = ['converter', 'image-picker', 'collection']
+      if (validViews.includes(hash) && hash !== this.currentView) {
+        this.switchView(hash)
+      }
+    })
+    
+    // Handle initial hash
+    const initialHash = window.location.hash.slice(1)
+    if (initialHash && ['converter', 'image-picker', 'collection'].includes(initialHash)) {
+      this.currentView = initialHash
+    }
+    
+    // Performance monitoring
+    if ('performance' in window) {
+      window.addEventListener('load', () => {
+        setTimeout(() => {
+          const navigation = performance.getEntriesByType('navigation')[0]
+          console.log(`Page load time: ${navigation.loadEventEnd - navigation.loadEventStart}ms`)
+        }, 0)
+      })
+    }
+    
+    // Error handling
+    window.addEventListener('error', (e) => {
+      console.error('Global error:', e.error)
+      this.uiEnhancements.showToast('An error occurred. Please try again.', 'error')
+    })
+    
+    // Handle unhandled promise rejections
+    window.addEventListener('unhandledrejection', (e) => {
+      console.error('Unhandled promise rejection:', e.reason)
+      this.uiEnhancements.showToast('An error occurred. Please try again.', 'error')
+      e.preventDefault()
+    })
+  }
+
+  // Cleanup method for when the app is destroyed
+  cleanup() {
+    if (this.performanceOptimizer) {
+      this.performanceOptimizer.cleanup()
+    }
+    
+    // Log performance insights before cleanup
+    if (this.performanceOptimizer) {
+      const insights = this.performanceOptimizer.getPerformanceInsights()
+      console.log('Performance Insights:', insights)
+    }
+  }
+
+  // Method to get app health status
+  getAppHealth() {
+    const insights = this.performanceOptimizer?.getPerformanceInsights() || {}
+    
+    return {
+      currentView: this.currentView,
+      isTransitioning: this.isTransitioning,
+      performanceInsights: insights,
+      timestamp: new Date().toISOString()
+    }
   }
 }
