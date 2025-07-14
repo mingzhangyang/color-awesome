@@ -4,9 +4,16 @@ export class ImageColorPicker {
     this.ctx = null
     this.imageData = null
     this.extractedColors = []
+    this.container = null
+  }
+
+  // Helper method to get elements within this container
+  getElement(id) {
+    return this.container ? this.container.querySelector(`#${id}`) : null
   }
 
   render(container) {
+    this.container = container
     container.innerHTML = `
       <div class="space-y-8">
         <!-- Hero Section -->
@@ -119,8 +126,8 @@ export class ImageColorPicker {
 
   setupEventListeners() {
     // File input
-    const imageInput = document.getElementById('image-input')
-    const uploadArea = document.getElementById('upload-area')
+    const imageInput = this.getElement('image-input')
+    const uploadArea = this.getElement('upload-area')
     const chooseFileBtn = uploadArea.querySelector('.btn-primary')
 
     chooseFileBtn.addEventListener('click', () => imageInput.click())
@@ -161,27 +168,27 @@ export class ImageColorPicker {
     })
 
     // Action buttons
-    document.getElementById('clear-image')?.addEventListener('click', () => {
+    this.getElement('clear-image')?.addEventListener('click', () => {
       this.clearImage()
     })
 
-    document.getElementById('clear-colors')?.addEventListener('click', () => {
+    this.getElement('clear-colors')?.addEventListener('click', () => {
       this.clearExtractedColors()
     })
 
-    document.getElementById('save-palette')?.addEventListener('click', () => {
+    this.getElement('save-palette')?.addEventListener('click', () => {
       this.savePalette()
     })
 
-    document.getElementById('extract-dominant')?.addEventListener('click', () => {
+    this.getElement('extract-dominant')?.addEventListener('click', () => {
       this.extractDominantColors()
     })
 
-    document.getElementById('extract-palette')?.addEventListener('click', () => {
+    this.getElement('extract-palette')?.addEventListener('click', () => {
       this.generatePalette()
     })
 
-    document.getElementById('analyze-colors')?.addEventListener('click', () => {
+    this.getElement('analyze-colors')?.addEventListener('click', () => {
       this.analyzeColors()
     })
 
@@ -190,36 +197,36 @@ export class ImageColorPicker {
   }
 
   setupCanvasInteractions() {
-    const canvas = document.getElementById('image-canvas')
-    const colorPreview = document.getElementById('live-color-preview')
-    const colorHex = document.getElementById('live-color-hex')
-    const pickerInfo = document.getElementById('color-picker-info')
-    const coordinates = document.getElementById('picker-coordinates')
-    const pickerColor = document.getElementById('picker-color')
+    const canvas = this.getElement('image-canvas')
+    const colorPreview = this.getElement('live-color-preview')
+    const colorHex = this.getElement('live-color-hex')
+    const pickerInfo = this.getElement('color-picker-info')
+    const coordinates = this.getElement('picker-coordinates')
+    const pickerColor = this.getElement('picker-color')
     
     this.zoomLevel = 1
     this.isEyedropperMode = false
     
     // Zoom controls
-    document.getElementById('zoom-in')?.addEventListener('click', () => {
+    this.getElement('zoom-in')?.addEventListener('click', () => {
       this.zoomLevel = Math.min(this.zoomLevel * 1.2, 5)
       this.updateZoom()
     })
     
-    document.getElementById('zoom-out')?.addEventListener('click', () => {
+    this.getElement('zoom-out')?.addEventListener('click', () => {
       this.zoomLevel = Math.max(this.zoomLevel / 1.2, 0.1)
       this.updateZoom()
     })
     
-    document.getElementById('zoom-reset')?.addEventListener('click', () => {
+    this.getElement('zoom-reset')?.addEventListener('click', () => {
       this.zoomLevel = 1
       this.updateZoom()
     })
     
     // Eyedropper toggle
-    document.getElementById('toggle-eyedropper')?.addEventListener('click', () => {
+    this.getElement('toggle-eyedropper')?.addEventListener('click', () => {
       this.isEyedropperMode = !this.isEyedropperMode
-      const btn = document.getElementById('toggle-eyedropper')
+      const btn = this.getElement('toggle-eyedropper')
       if (this.isEyedropperMode) {
         btn.textContent = '🎯 Normal Mode'
         btn.classList.add('bg-primary-100', 'border-primary-300')
@@ -282,8 +289,8 @@ export class ImageColorPicker {
   }
 
   displayImage(img) {
-    const canvasContainer = document.getElementById('canvas-container')
-    const canvas = document.getElementById('image-canvas')
+    const canvasContainer = this.getElement('canvas-container')
+    const canvas = this.getElement('image-canvas')
     const ctx = canvas.getContext('2d')
 
     // Calculate display size (max 800px width)
@@ -351,7 +358,7 @@ export class ImageColorPicker {
     this.updateColorGrid()
 
     // Show extracted colors section
-    document.getElementById('extracted-colors-section').classList.remove('hidden')
+    this.getElement('extracted-colors-section').classList.remove('hidden')
   }
 
   addExtractedColor(hex, r, g, b) {
@@ -375,8 +382,8 @@ export class ImageColorPicker {
   }
 
   updateColorGrid() {
-    const colorGrid = document.getElementById('color-grid')
-    const extractedSection = document.getElementById('extracted-colors-section')
+    const colorGrid = this.getElement('color-grid')
+    const extractedSection = this.getElement('extracted-colors-section')
     
     if (this.extractedColors.length > 0) {
       extractedSection.classList.remove('hidden')
@@ -408,9 +415,9 @@ export class ImageColorPicker {
   }
 
   clearImage() {
-    document.getElementById('canvas-container').classList.add('hidden')
-    document.getElementById('extracted-colors-section').classList.add('hidden')
-    document.getElementById('image-input').value = ''
+    this.getElement('canvas-container').classList.add('hidden')
+    this.getElement('extracted-colors-section').classList.add('hidden')
+    this.getElement('image-input').value = ''
     this.canvas = null
     this.ctx = null
     this.imageData = null
@@ -420,7 +427,7 @@ export class ImageColorPicker {
   clearExtractedColors() {
     this.extractedColors = []
     this.updateColorGrid()
-    document.getElementById('extracted-colors-section').classList.add('hidden')
+    this.getElement('extracted-colors-section').classList.add('hidden')
   }
 
   savePalette() {
@@ -639,7 +646,7 @@ export class ImageColorPicker {
         <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
           <div class="flex justify-between items-center mb-4">
             <h3 class="text-lg font-semibold">Color Analysis Results</h3>
-            <button class="text-gray-400 hover:text-gray-600" onclick="document.getElementById('analysis-modal').remove()">✕</button>
+            <button class="text-gray-400 hover:text-gray-600" onclick="this.getElement('analysis-modal').remove()">✕</button>
           </div>
           
           <div class="space-y-3">
@@ -676,7 +683,7 @@ export class ImageColorPicker {
             </div>
           </div>
           
-          <button class="btn-primary w-full mt-4" onclick="document.getElementById('analysis-modal').remove()">
+          <button class="btn-primary w-full mt-4" onclick="this.getElement('analysis-modal').remove()">
             Close
           </button>
         </div>
@@ -734,8 +741,8 @@ export class ImageColorPicker {
   }
 
   updateZoom() {
-    const canvas = document.getElementById('image-canvas')
-    const zoomLevelSpan = document.getElementById('zoom-level')
+    const canvas = this.getElement('image-canvas')
+    const zoomLevelSpan = this.getElement('zoom-level')
     
     if (canvas) {
       canvas.style.transform = `scale(${this.zoomLevel})`
@@ -749,7 +756,7 @@ export class ImageColorPicker {
   getPixelColor(x, y) {
     if (!this.imageData) return { r: 0, g: 0, b: 0, a: 0 }
     
-    const canvas = document.getElementById('image-canvas')
+    const canvas = this.getElement('image-canvas')
     const index = (y * canvas.width + x) * 4
     
     return {

@@ -8,6 +8,7 @@ export class ColorCollection {
     this.currentSort = 'newest'
     this.favoriteColors = new Set()
     this.colorTags = new Map()
+    this.container = null
     this.searchQuery = ''
     this.selectedColorIds = new Set()
     this.isDragMode = false
@@ -15,6 +16,12 @@ export class ColorCollection {
     // Initialize data migration
     this.migrateDataIfNeeded()
   }
+
+  // Helper method to get elements within this container
+  getElement(id) {
+    return this.container ? this.container.querySelector(`#${id}`) : null
+  }
+}
 
   migrateDataIfNeeded() {
     const currentVersion = localStorage.getItem('colorAwesome_version') || '1.0.0'
@@ -70,6 +77,7 @@ export class ColorCollection {
   }
 
   render(container) {
+    this.container = container
     this.loadData()
     
     container.innerHTML = `
@@ -177,12 +185,12 @@ export class ColorCollection {
     document.querySelectorAll('.view-toggle').forEach(btn => {
       btn.addEventListener('click', (e) => {
         this.currentView = e.target.getAttribute('data-view')
-        this.render(document.getElementById('main-content'))
+        this.render(this.getElement('main-content'))
       })
     })
 
     // Search
-    document.getElementById('search-input').addEventListener('input', (e) => {
+    this.getElement('search-input').addEventListener('input', (e) => {
       this.searchQuery = e.target.value
       this.renderContent()
     })
@@ -198,21 +206,21 @@ export class ColorCollection {
     })
 
     // Tag filter
-    document.getElementById('tag-filter').addEventListener('change', (e) => {
+    this.getElement('tag-filter').addEventListener('change', (e) => {
       this.selectedTag = e.target.value
       this.renderContent()
     })
 
     // Sort options
-    document.getElementById('sort-options').addEventListener('change', (e) => {
+    this.getElement('sort-options').addEventListener('change', (e) => {
       this.currentSort = e.target.value
       this.renderContent()
     })
 
     // Drag mode toggle
-    document.getElementById('toggle-drag-mode').addEventListener('click', () => {
+    this.getElement('toggle-drag-mode').addEventListener('click', () => {
       this.isDragMode = !this.isDragMode
-      const btn = document.getElementById('toggle-drag-mode')
+      const btn = this.getElement('toggle-drag-mode')
       if (this.isDragMode) {
         btn.textContent = '✅ Organizing'
         btn.classList.add('bg-primary-100', 'border-primary-300')
@@ -224,15 +232,15 @@ export class ColorCollection {
     })
 
     // Actions
-    document.getElementById('import-data').addEventListener('click', () => {
+    this.getElement('import-data').addEventListener('click', () => {
       this.importData()
     })
 
-    document.getElementById('export-data').addEventListener('click', () => {
+    this.getElement('export-data').addEventListener('click', () => {
       this.exportData()
     })
 
-    document.getElementById('clear-all').addEventListener('click', () => {
+    this.getElement('clear-all').addEventListener('click', () => {
       this.clearAll()
     })
   }
@@ -243,8 +251,8 @@ export class ColorCollection {
   }
 
   renderContent() {
-    const contentArea = document.getElementById('collection-content')
-    const emptyState = document.getElementById('empty-state')
+    const contentArea = this.getElement('collection-content')
+    const emptyState = this.getElement('empty-state')
 
     if (this.currentView === 'colors') {
       let filteredColors = this.getFilteredAndSortedColors()
@@ -257,7 +265,7 @@ export class ColorCollection {
         contentArea.innerHTML = `
           <div class="text-center py-12">
             <p class="text-gray-600">No colors match your current filters.</p>
-            <button class="btn-secondary mt-2" onclick="document.getElementById('search-input').value = ''; this.searchQuery = ''; this.renderContent()">
+            <button class="btn-secondary mt-2" onclick="this.getElement('search-input').value = ''; this.searchQuery = ''; this.renderContent()">
               Clear Filters
             </button>
           </div>
@@ -288,7 +296,7 @@ export class ColorCollection {
         contentArea.innerHTML = `
           <div class="text-center py-12">
             <p class="text-gray-600">No palettes match your current filters.</p>
-            <button class="btn-secondary mt-2" onclick="document.getElementById('search-input').value = ''; this.searchQuery = ''; this.renderContent()">
+            <button class="btn-secondary mt-2" onclick="this.getElement('search-input').value = ''; this.searchQuery = ''; this.renderContent()">
               Clear Filters
             </button>
           </div>
@@ -633,7 +641,7 @@ export class ColorCollection {
               localStorage.setItem('savedPalettes', JSON.stringify(this.savedPalettes))
             }
             
-            this.render(document.getElementById('main-content'))
+            this.render(this.getElement('main-content'))
             this.showToast('Data imported successfully!')
           } catch (error) {
             alert('Invalid file format!')
