@@ -1,9 +1,16 @@
 export class ColorConverter {
   constructor() {
     this.currentColor = '#3b82f6'
+    this.container = null
+  }
+
+  // Helper method to get elements within this container
+  getElement(id) {
+    return this.container ? this.container.querySelector(`#${id}`) : null
   }
 
   render(container) {
+    this.container = container
     container.innerHTML = `
       <div class="space-y-8">
         <!-- Hero Section -->
@@ -36,7 +43,7 @@ export class ColorConverter {
               placeholder="#3b82f6"
               value="${this.currentColor}"
             >
-            <button class="btn-secondary mt-2 w-full" onclick="navigator.clipboard.writeText(document.getElementById('hex-input').value)">
+            <button class="btn-secondary mt-2 w-full" id="copy-hex">
               Copy HEX
             </button>
           </div>
@@ -199,27 +206,32 @@ export class ColorConverter {
   }
 
   setupEventListeners() {
+    // Helper method to get elements within this container
+    const getElement = (id) => this.container.querySelector(`#${id}`)
+    
     // HEX input
-    const hexInput = document.getElementById('hex-input')
-    hexInput.addEventListener('input', (e) => {
-      this.currentColor = e.target.value
-      
-      // Add visual feedback for invalid hex
-      if (this.isValidHex(this.currentColor)) {
-        hexInput.classList.remove('border-red-500')
-        hexInput.classList.add('border-green-500')
-      } else {
-        hexInput.classList.remove('border-green-500')
-        hexInput.classList.add('border-red-500')
-      }
-      
-      this.updateColorValues()
-    })
+    const hexInput = getElement('hex-input')
+    if (hexInput) {
+      hexInput.addEventListener('input', (e) => {
+        this.currentColor = e.target.value
+        
+        // Add visual feedback for invalid hex
+        if (this.isValidHex(this.currentColor)) {
+          hexInput.classList.remove('border-red-500')
+          hexInput.classList.add('border-green-500')
+        } else {
+          hexInput.classList.remove('border-green-500')
+          hexInput.classList.add('border-red-500')
+        }
+        
+        this.updateColorValues()
+      })
+    }
 
     // RGB inputs
-    const rgbR = document.getElementById('rgb-r')
-    const rgbG = document.getElementById('rgb-g')
-    const rgbB = document.getElementById('rgb-b')
+    const rgbR = getElement('rgb-r')
+    const rgbG = getElement('rgb-g')
+    const rgbB = getElement('rgb-b')
 
     if (rgbR && rgbG && rgbB) {
       [rgbR, rgbG, rgbB].forEach(input => {
@@ -230,9 +242,9 @@ export class ColorConverter {
     }
 
     // HSL inputs
-    const hslH = document.getElementById('hsl-h')
-    const hslS = document.getElementById('hsl-s')
-    const hslL = document.getElementById('hsl-l')
+    const hslH = getElement('hsl-h')
+    const hslS = getElement('hsl-s')
+    const hslL = getElement('hsl-l')
 
     if (hslH && hslS && hslL) {
       [hslH, hslS, hslL].forEach(input => {
@@ -243,9 +255,9 @@ export class ColorConverter {
     }
 
     // HSV inputs
-    const hsvH = document.getElementById('hsv-h')
-    const hsvS = document.getElementById('hsv-s')
-    const hsvV = document.getElementById('hsv-v')
+    const hsvH = getElement('hsv-h')
+    const hsvS = getElement('hsv-s')
+    const hsvV = getElement('hsv-v')
 
     if (hsvH && hsvS && hsvV) {
       [hsvH, hsvS, hsvV].forEach(input => {
@@ -256,10 +268,10 @@ export class ColorConverter {
     }
 
     // CMYK inputs
-    const cmykC = document.getElementById('cmyk-c')
-    const cmykM = document.getElementById('cmyk-m')
-    const cmykY = document.getElementById('cmyk-y')
-    const cmykK = document.getElementById('cmyk-k')
+    const cmykC = getElement('cmyk-c')
+    const cmykM = getElement('cmyk-m')
+    const cmykY = getElement('cmyk-y')
+    const cmykK = getElement('cmyk-k')
 
     if (cmykC && cmykM && cmykY && cmykK) {
       [cmykC, cmykM, cmykY, cmykK].forEach(input => {
@@ -270,9 +282,9 @@ export class ColorConverter {
     }
 
     // LAB inputs
-    const labL = document.getElementById('lab-l')
-    const labA = document.getElementById('lab-a')
-    const labB = document.getElementById('lab-b')
+    const labL = getElement('lab-l')
+    const labA = getElement('lab-a')
+    const labB = getElement('lab-b')
 
     if (labL && labA && labB) {
       [labL, labA, labB].forEach(input => {
@@ -283,73 +295,112 @@ export class ColorConverter {
     }
 
     // Copy buttons
-    document.getElementById('copy-rgb').addEventListener('click', () => {
-      const r = document.getElementById('rgb-r').value
-      const g = document.getElementById('rgb-g').value
-      const b = document.getElementById('rgb-b').value
-      navigator.clipboard.writeText(`rgb(${r}, ${g}, ${b})`)
-      this.showToast('RGB copied!')
-    })
+    const copyHex = getElement('copy-hex')
+    if (copyHex) {
+      copyHex.addEventListener('click', () => {
+        const hex = getElement('hex-input').value
+        navigator.clipboard.writeText(hex)
+        this.showToast('HEX copied!')
+      })
+    }
 
-    document.getElementById('copy-hsl').addEventListener('click', () => {
-      const h = document.getElementById('hsl-h').value
-      const s = document.getElementById('hsl-s').value
-      const l = document.getElementById('hsl-l').value
-      navigator.clipboard.writeText(`hsl(${h}, ${s}%, ${l}%)`)
-      this.showToast('HSL copied!')
-    })
+    const copyRgb = getElement('copy-rgb')
+    if (copyRgb) {
+      copyRgb.addEventListener('click', () => {
+        const r = getElement('rgb-r').value
+        const g = getElement('rgb-g').value
+        const b = getElement('rgb-b').value
+        navigator.clipboard.writeText(`rgb(${r}, ${g}, ${b})`)
+        this.showToast('RGB copied!')
+      })
+    }
 
-    document.getElementById('copy-hsv').addEventListener('click', () => {
-      const h = document.getElementById('hsv-h').value
-      const s = document.getElementById('hsv-s').value
-      const v = document.getElementById('hsv-v').value
-      navigator.clipboard.writeText(`hsv(${h}, ${s}%, ${v}%)`)
-      this.showToast('HSV copied!')
-    })
+    const copyHsl = getElement('copy-hsl')
+    if (copyHsl) {
+      copyHsl.addEventListener('click', () => {
+        const h = getElement('hsl-h').value
+        const s = getElement('hsl-s').value
+        const l = getElement('hsl-l').value
+        navigator.clipboard.writeText(`hsl(${h}, ${s}%, ${l}%)`)
+        this.showToast('HSL copied!')
+      })
+    }
 
-    document.getElementById('copy-cmyk').addEventListener('click', () => {
-      const c = document.getElementById('cmyk-c').value
-      const m = document.getElementById('cmyk-m').value
-      const y = document.getElementById('cmyk-y').value
-      const k = document.getElementById('cmyk-k').value
-      navigator.clipboard.writeText(`cmyk(${c}%, ${m}%, ${y}%, ${k}%)`)
-      this.showToast('CMYK copied!')
-    })
+    const copyHsv = getElement('copy-hsv')
+    if (copyHsv) {
+      copyHsv.addEventListener('click', () => {
+        const h = getElement('hsv-h').value
+        const s = getElement('hsv-s').value
+        const v = getElement('hsv-v').value
+        navigator.clipboard.writeText(`hsv(${h}, ${s}%, ${v}%)`)
+        this.showToast('HSV copied!')
+      })
+    }
 
-    document.getElementById('copy-lab').addEventListener('click', () => {
-      const l = document.getElementById('lab-l').value
-      const a = document.getElementById('lab-a').value
-      const b = document.getElementById('lab-b').value
-      navigator.clipboard.writeText(`lab(${l}, ${a}, ${b})`)
-      this.showToast('LAB copied!')
-    })
+    const copyCmyk = getElement('copy-cmyk')
+    if (copyCmyk) {
+      copyCmyk.addEventListener('click', () => {
+        const c = getElement('cmyk-c').value
+        const m = getElement('cmyk-m').value
+        const y = getElement('cmyk-y').value
+        const k = getElement('cmyk-k').value
+        navigator.clipboard.writeText(`cmyk(${c}%, ${m}%, ${y}%, ${k}%)`)
+        this.showToast('CMYK copied!')
+      })
+    }
+
+    const copyLab = getElement('copy-lab')
+    if (copyLab) {
+      copyLab.addEventListener('click', () => {
+        const l = getElement('lab-l').value
+        const a = getElement('lab-a').value
+        const b = getElement('lab-b').value
+        navigator.clipboard.writeText(`lab(${l}, ${a}, ${b})`)
+        this.showToast('LAB copied!')
+      })
+    }
 
     // Action buttons
-    document.getElementById('save-color').addEventListener('click', () => {
-      this.saveColor()
-    })
+    const saveColorBtn = getElement('save-color')
+    if (saveColorBtn) {
+      saveColorBtn.addEventListener('click', () => {
+        this.saveColor()
+      })
+    }
 
-    document.getElementById('random-color').addEventListener('click', () => {
-      this.generateRandomColor()
-    })
+    const randomColorBtn = getElement('random-color')
+    if (randomColorBtn) {
+      randomColorBtn.addEventListener('click', () => {
+        this.generateRandomColor()
+      })
+    }
 
     // Harmony controls
-    document.getElementById('harmony-type').addEventListener('change', () => {
-      this.updateHarmonyColors()
-    })
+    const harmonyType = getElement('harmony-type')
+    if (harmonyType) {
+      harmonyType.addEventListener('change', () => {
+        this.updateHarmonyColors()
+      })
+    }
 
-    document.getElementById('save-harmony').addEventListener('click', () => {
-      this.saveHarmonyPalette()
-    })
+    const saveHarmony = getElement('save-harmony')
+    if (saveHarmony) {
+      saveHarmony.addEventListener('click', () => {
+        this.saveHarmonyPalette()
+      })
+    }
 
     // Contrast checking
-    document.getElementById('contrast-color').addEventListener('input', () => {
-      this.updateAccessibilityInfo()
-    })
+    const contrastColor = getElement('contrast-color')
+    if (contrastColor) {
+      contrastColor.addEventListener('input', () => {
+        this.updateAccessibilityInfo()
+      })
+    }
   }
 
   updateColorPreview() {
-    const preview = document.getElementById('color-preview')
+    const preview = this.getElement('color-preview')
     if (preview) {
       preview.style.backgroundColor = this.currentColor
     }
