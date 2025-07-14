@@ -16,9 +16,9 @@ export class App {
   }
 
   init() {
+    this.initializeEnhancements()
     this.render()
     this.setupEventListeners()
-    this.initializeEnhancements()
   }
 
   initializeEnhancements() {
@@ -137,7 +137,9 @@ export class App {
     this.isTransitioning = true
     
     // Show loading state
-    this.uiEnhancements.setLoading(contentElement, true)
+    if (this.uiEnhancements) {
+      this.uiEnhancements.setLoading(contentElement, true)
+    }
     
     // Simulate component initialization time
     setTimeout(() => {
@@ -159,22 +161,33 @@ export class App {
       }
       
       // Remove loading state
-      this.uiEnhancements.setLoading(contentElement, false)
+      if (this.uiEnhancements) {
+        this.uiEnhancements.setLoading(contentElement, false)
+      }
       
       // Perform transition
-      this.uiEnhancements.transitionToView(
-        currentElement, 
-        newContent, 
-        this.getTransitionDirection()
-      ).then(() => {
+      if (this.uiEnhancements) {
+        this.uiEnhancements.transitionToView(
+          currentElement, 
+          newContent, 
+          this.getTransitionDirection()
+        ).then(() => {
+          contentElement.innerHTML = ''
+          contentElement.appendChild(newContent)
+          
+          // Enhance new content with animations and interactions
+          if (this.uiEnhancements) {
+            this.uiEnhancements.enhanceNewContent(newContent)
+          }
+          
+          this.isTransitioning = false
+        })
+      } else {
+        // Fallback without transitions
         contentElement.innerHTML = ''
         contentElement.appendChild(newContent)
-        
-        // Enhance new content with animations and interactions
-        this.uiEnhancements.enhanceNewContent(newContent)
-        
         this.isTransitioning = false
-      })
+      }
     }, 150) // Small delay for better UX
   }
 
@@ -249,13 +262,17 @@ export class App {
     // Error handling
     window.addEventListener('error', (e) => {
       console.error('Global error:', e.error)
-      this.uiEnhancements.showToast('An error occurred. Please try again.', 'error')
+      if (this.uiEnhancements) {
+        this.uiEnhancements.showToast('An error occurred. Please try again.', 'error')
+      }
     })
     
     // Handle unhandled promise rejections
     window.addEventListener('unhandledrejection', (e) => {
       console.error('Unhandled promise rejection:', e.reason)
-      this.uiEnhancements.showToast('An error occurred. Please try again.', 'error')
+      if (this.uiEnhancements) {
+        this.uiEnhancements.showToast('An error occurred. Please try again.', 'error')
+      }
       e.preventDefault()
     })
   }
