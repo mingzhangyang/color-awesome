@@ -424,37 +424,37 @@ export class ColorConverter {
     const lab = this.rgbToLab(rgb.r, rgb.g, rgb.b)
 
     // Update RGB inputs
-    const rgbR = document.getElementById('rgb-r')
-    const rgbG = document.getElementById('rgb-g')
-    const rgbB = document.getElementById('rgb-b')
+    const rgbR = this.getElement('rgb-r')
+    const rgbG = this.getElement('rgb-g')
+    const rgbB = this.getElement('rgb-b')
     
     if (rgbR) rgbR.value = rgb.r
     if (rgbG) rgbG.value = rgb.g
     if (rgbB) rgbB.value = rgb.b
 
     // Update HSL inputs
-    const hslH = document.getElementById('hsl-h')
-    const hslS = document.getElementById('hsl-s')
-    const hslL = document.getElementById('hsl-l')
+    const hslH = this.getElement('hsl-h')
+    const hslS = this.getElement('hsl-s')
+    const hslL = this.getElement('hsl-l')
     
     if (hslH) hslH.value = Math.round(hsl.h)
     if (hslS) hslS.value = Math.round(hsl.s)
     if (hslL) hslL.value = Math.round(hsl.l)
 
     // Update HSV inputs
-    const hsvH = document.getElementById('hsv-h')
-    const hsvS = document.getElementById('hsv-s')
-    const hsvV = document.getElementById('hsv-v')
+    const hsvH = this.getElement('hsv-h')
+    const hsvS = this.getElement('hsv-s')
+    const hsvV = this.getElement('hsv-v')
     
     if (hsvH) hsvH.value = Math.round(hsv.h)
     if (hsvS) hsvS.value = Math.round(hsv.s)
     if (hsvV) hsvV.value = Math.round(hsv.v)
 
     // Update CMYK inputs
-    const cmykC = document.getElementById('cmyk-c')
-    const cmykM = document.getElementById('cmyk-m')
-    const cmykY = document.getElementById('cmyk-y')
-    const cmykK = document.getElementById('cmyk-k')
+    const cmykC = this.getElement('cmyk-c')
+    const cmykM = this.getElement('cmyk-m')
+    const cmykY = this.getElement('cmyk-y')
+    const cmykK = this.getElement('cmyk-k')
     
     if (cmykC) cmykC.value = Math.round(cmyk.c)
     if (cmykM) cmykM.value = Math.round(cmyk.m)
@@ -462,9 +462,9 @@ export class ColorConverter {
     if (cmykK) cmykK.value = Math.round(cmyk.k)
 
     // Update LAB inputs
-    const labL = document.getElementById('lab-l')
-    const labA = document.getElementById('lab-a')
-    const labB = document.getElementById('lab-b')
+    const labL = this.getElement('lab-l')
+    const labA = this.getElement('lab-a')
+    const labB = this.getElement('lab-b')
     
     if (labL) labL.value = Math.round(lab.l)
     if (labA) labA.value = Math.round(lab.a)
@@ -476,79 +476,79 @@ export class ColorConverter {
   }
 
   updateFromRGB() {
-    const r = parseInt(document.getElementById('rgb-r').value) || 0
-    const g = parseInt(document.getElementById('rgb-g').value) || 0
-    const b = parseInt(document.getElementById('rgb-b').value) || 0
+    const r = parseInt(this.getElement('rgb-r').value) || 0
+    const g = parseInt(this.getElement('rgb-g').value) || 0
+    const b = parseInt(this.getElement('rgb-b').value) || 0
 
     this.currentColor = this.rgbToHex(r, g, b)
-    document.getElementById('hex-input').value = this.currentColor
+    this.getElement('hex-input').value = this.currentColor
 
     const hsl = this.rgbToHsl(r, g, b)
-    document.getElementById('hsl-h').value = Math.round(hsl.h)
-    document.getElementById('hsl-s').value = Math.round(hsl.s)
-    document.getElementById('hsl-l').value = Math.round(hsl.l)
+    this.getElement('hsl-h').value = Math.round(hsl.h)
+    this.getElement('hsl-s').value = Math.round(hsl.s)
+    this.getElement('hsl-l').value = Math.round(hsl.l)
 
     this.updateColorPreview()
   }
 
   updateFromHSL() {
-    const h = parseInt(document.getElementById('hsl-h').value) || 0
-    const s = parseInt(document.getElementById('hsl-s').value) || 0
-    const l = parseInt(document.getElementById('hsl-l').value) || 0
+    const h = parseInt(this.getElement('hsl-h').value) || 0
+    const s = parseInt(this.getElement('hsl-s').value) || 0
+    const l = parseInt(this.getElement('hsl-l').value) || 0
 
     const rgb = this.hslToRgb(h / 360, s / 100, l / 100)
     
-    document.getElementById('rgb-r').value = rgb.r
-    document.getElementById('rgb-g').value = rgb.g
-    document.getElementById('rgb-b').value = rgb.b
+    this.getElement('rgb-r').value = rgb.r
+    this.getElement('rgb-g').value = rgb.g
+    this.getElement('rgb-b').value = rgb.b
 
     this.currentColor = this.rgbToHex(rgb.r, rgb.g, rgb.b)
-    document.getElementById('hex-input').value = this.currentColor
+    this.getElement('hex-input').value = this.currentColor
 
     // Update other formats
     const hsv = this.rgbToHsv(rgb.r, rgb.g, rgb.b)
     const cmyk = this.rgbToCmyk(rgb.r, rgb.g, rgb.b)
     const lab = this.rgbToLab(rgb.r, rgb.g, rgb.b)
 
-    document.getElementById('hsv-h').value = Math.round(hsv.h)
-    document.getElementById('hsv-s').value = Math.round(hsv.s)
-    document.getElementById('hsv-v').value = Math.round(hsv.v)
+    this.getElement('hsv-h').value = Math.round(hsv.h)
+    this.getElement('hsv-s').value = Math.round(hsv.s)
+    this.getElement('hsv-v').value = Math.round(hsv.v)
 
-    document.getElementById('cmyk-c').value = Math.round(cmyk.c)
-    document.getElementById('cmyk-m').value = Math.round(cmyk.m)
-    document.getElementById('cmyk-y').value = Math.round(cmyk.y)
-    document.getElementById('cmyk-k').value = Math.round(cmyk.k)
+    this.getElement('cmyk-c').value = Math.round(cmyk.c)
+    this.getElement('cmyk-m').value = Math.round(cmyk.m)
+    this.getElement('cmyk-y').value = Math.round(cmyk.y)
+    this.getElement('cmyk-k').value = Math.round(cmyk.k)
 
-    document.getElementById('lab-l').value = Math.round(lab.l)
-    document.getElementById('lab-a').value = Math.round(lab.a)
-    document.getElementById('lab-b').value = Math.round(lab.b)
+    this.getElement('lab-l').value = Math.round(lab.l)
+    this.getElement('lab-a').value = Math.round(lab.a)
+    this.getElement('lab-b').value = Math.round(lab.b)
 
     this.updateColorPreview()
   }
 
   updateFromHSV() {
-    const h = parseInt(document.getElementById('hsv-h').value) || 0
-    const s = parseInt(document.getElementById('hsv-s').value) || 0
-    const v = parseInt(document.getElementById('hsv-v').value) || 0
+    const h = parseInt(this.getElement('hsv-h').value) || 0
+    const s = parseInt(this.getElement('hsv-s').value) || 0
+    const v = parseInt(this.getElement('hsv-v').value) || 0
 
     const rgb = this.hsvToRgb(h / 360, s / 100, v / 100)
     this.updateAllFromRgb(rgb.r, rgb.g, rgb.b)
   }
 
   updateFromCMYK() {
-    const c = parseInt(document.getElementById('cmyk-c').value) || 0
-    const m = parseInt(document.getElementById('cmyk-m').value) || 0
-    const y = parseInt(document.getElementById('cmyk-y').value) || 0
-    const k = parseInt(document.getElementById('cmyk-k').value) || 0
+    const c = parseInt(this.getElement('cmyk-c').value) || 0
+    const m = parseInt(this.getElement('cmyk-m').value) || 0
+    const y = parseInt(this.getElement('cmyk-y').value) || 0
+    const k = parseInt(this.getElement('cmyk-k').value) || 0
 
     const rgb = this.cmykToRgb(c / 100, m / 100, y / 100, k / 100)
     this.updateAllFromRgb(rgb.r, rgb.g, rgb.b)
   }
 
   updateFromLAB() {
-    const l = parseInt(document.getElementById('lab-l').value) || 0
-    const a = parseInt(document.getElementById('lab-a').value) || 0
-    const b = parseInt(document.getElementById('lab-b').value) || 0
+    const l = parseInt(this.getElement('lab-l').value) || 0
+    const a = parseInt(this.getElement('lab-a').value) || 0
+    const b = parseInt(this.getElement('lab-b').value) || 0
 
     const rgb = this.labToRgb(l, a, b)
     this.updateAllFromRgb(rgb.r, rgb.g, rgb.b)
@@ -556,13 +556,13 @@ export class ColorConverter {
 
   updateAllFromRgb(r, g, b) {
     // Update RGB inputs
-    document.getElementById('rgb-r').value = r
-    document.getElementById('rgb-g').value = g
-    document.getElementById('rgb-b').value = b
+    this.getElement('rgb-r').value = r
+    this.getElement('rgb-g').value = g
+    this.getElement('rgb-b').value = b
 
     // Update HEX
     this.currentColor = this.rgbToHex(r, g, b)
-    document.getElementById('hex-input').value = this.currentColor
+    this.getElement('hex-input').value = this.currentColor
 
     // Update other formats
     const hsl = this.rgbToHsl(r, g, b)
@@ -572,28 +572,28 @@ export class ColorConverter {
 
     // Only update if not the source of change
     if (document.activeElement.id.indexOf('hsl') !== 0) {
-      document.getElementById('hsl-h').value = Math.round(hsl.h)
-      document.getElementById('hsl-s').value = Math.round(hsl.s)
-      document.getElementById('hsl-l').value = Math.round(hsl.l)
+      this.getElement('hsl-h').value = Math.round(hsl.h)
+      this.getElement('hsl-s').value = Math.round(hsl.s)
+      this.getElement('hsl-l').value = Math.round(hsl.l)
     }
 
     if (document.activeElement.id.indexOf('hsv') !== 0) {
-      document.getElementById('hsv-h').value = Math.round(hsv.h)
-      document.getElementById('hsv-s').value = Math.round(hsv.s)
-      document.getElementById('hsv-v').value = Math.round(hsv.v)
+      this.getElement('hsv-h').value = Math.round(hsv.h)
+      this.getElement('hsv-s').value = Math.round(hsv.s)
+      this.getElement('hsv-v').value = Math.round(hsv.v)
     }
 
     if (document.activeElement.id.indexOf('cmyk') !== 0) {
-      document.getElementById('cmyk-c').value = Math.round(cmyk.c)
-      document.getElementById('cmyk-m').value = Math.round(cmyk.m)
-      document.getElementById('cmyk-y').value = Math.round(cmyk.y)
-      document.getElementById('cmyk-k').value = Math.round(cmyk.k)
+      this.getElement('cmyk-c').value = Math.round(cmyk.c)
+      this.getElement('cmyk-m').value = Math.round(cmyk.m)
+      this.getElement('cmyk-y').value = Math.round(cmyk.y)
+      this.getElement('cmyk-k').value = Math.round(cmyk.k)
     }
 
     if (document.activeElement.id.indexOf('lab') !== 0) {
-      document.getElementById('lab-l').value = Math.round(lab.l)
-      document.getElementById('lab-a').value = Math.round(lab.a)
-      document.getElementById('lab-b').value = Math.round(lab.b)
+      this.getElement('lab-l').value = Math.round(lab.l)
+      this.getElement('lab-a').value = Math.round(lab.a)
+      this.getElement('lab-b').value = Math.round(lab.b)
     }
 
     this.updateColorPreview()
@@ -602,7 +602,7 @@ export class ColorConverter {
   generateRandomColor() {
     const randomHex = '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0')
     this.currentColor = randomHex
-    document.getElementById('hex-input').value = randomHex
+    this.getElement('hex-input').value = randomHex
     this.updateColorValues()
   }
 
@@ -645,22 +645,22 @@ export class ColorConverter {
     this.updateColorValidation()
     
     // Update contrast info
-    const contrastColor = document.getElementById('contrast-color').value || '#ffffff'
-    const contrastPreview = document.getElementById('contrast-preview')
+    const contrastColor = this.getElement('contrast-color').value || '#ffffff'
+    const contrastPreview = this.getElement('contrast-preview')
     contrastPreview.style.backgroundColor = contrastColor
     
     const ratio = this.calculateContrastRatio(this.currentColor, contrastColor)
     
-    document.getElementById('contrast-ratio').textContent = `${ratio.toFixed(2)}:1`
+    this.getElement('contrast-ratio').textContent = `${ratio.toFixed(2)}:1`
     
     // WCAG compliance
     const wcagAANormal = ratio >= 4.5
     const wcagAALarge = ratio >= 3.0
     const wcagAAA = ratio >= 7.0
     
-    document.getElementById('wcag-aa-normal').innerHTML = wcagAANormal ? '✅ Pass' : '❌ Fail'
-    document.getElementById('wcag-aa-large').innerHTML = wcagAALarge ? '✅ Pass' : '❌ Fail'
-    document.getElementById('wcag-aaa').innerHTML = wcagAAA ? '✅ Pass' : '❌ Fail'
+    this.getElement('wcag-aa-normal').innerHTML = wcagAANormal ? '✅ Pass' : '❌ Fail'
+    this.getElement('wcag-aa-large').innerHTML = wcagAALarge ? '✅ Pass' : '❌ Fail'
+    this.getElement('wcag-aaa').innerHTML = wcagAAA ? '✅ Pass' : '❌ Fail'
   }
 
   updateColorValidation() {
@@ -668,9 +668,9 @@ export class ColorConverter {
     const webSafe = this.isWebSafeColor(this.currentColor)
     const cssNamed = this.getCSSColorName(this.currentColor)
     
-    document.getElementById('hex-valid').innerHTML = hexValid ? '✅ Valid' : '❌ Invalid'
-    document.getElementById('web-safe').innerHTML = webSafe ? '✅ Yes' : '❌ No'
-    document.getElementById('css-named').innerHTML = cssNamed ? `✅ ${cssNamed}` : '❌ No'
+    this.getElement('hex-valid').innerHTML = hexValid ? '✅ Valid' : '❌ Invalid'
+    this.getElement('web-safe').innerHTML = webSafe ? '✅ Yes' : '❌ No'
+    this.getElement('css-named').innerHTML = cssNamed ? `✅ ${cssNamed}` : '❌ No'
   }
 
   isValidHex(hex) {
@@ -740,7 +740,7 @@ export class ColorConverter {
   }
 
   updateHarmonyColors() {
-    const harmonyType = document.getElementById('harmony-type').value
+    const harmonyType = this.getElement('harmony-type').value
     const rgb = this.hexToRgb(this.currentColor)
     const hsl = this.rgbToHsl(rgb.r, rgb.g, rgb.b)
     
@@ -818,7 +818,7 @@ export class ColorConverter {
   }
 
   renderHarmonyColors(colors) {
-    const harmonyContainer = document.getElementById('harmony-colors')
+    const harmonyContainer = this.getElement('harmony-colors')
     harmonyContainer.innerHTML = colors.map(color => `
       <div class="group relative">
         <div class="h-16 rounded border-2 border-gray-200 cursor-pointer hover:border-gray-400 transition-colors"
@@ -832,7 +832,7 @@ export class ColorConverter {
   }
 
   saveHarmonyPalette() {
-    const harmonyType = document.getElementById('harmony-type').value
+    const harmonyType = this.getElement('harmony-type').value
     const rgb = this.hexToRgb(this.currentColor)
     const hsl = this.rgbToHsl(rgb.r, rgb.g, rgb.b)
     
@@ -1111,10 +1111,10 @@ export class ColorConverter {
     // Try multiple strategies to ensure initialization works
     const attemptInitialization = () => {
       // Check if all required DOM elements exist
-      const hexInput = document.getElementById('hex-input')
-      const rgbR = document.getElementById('rgb-r')
-      const rgbG = document.getElementById('rgb-g')
-      const rgbB = document.getElementById('rgb-b')
+      const hexInput = this.getElement('hex-input')
+      const rgbR = this.getElement('rgb-r')
+      const rgbG = this.getElement('rgb-g')
+      const rgbB = this.getElement('rgb-b')
       
       if (hexInput && rgbR && rgbG && rgbB) {
         // All elements exist, proceed with initialization
