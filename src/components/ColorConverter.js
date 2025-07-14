@@ -556,18 +556,37 @@ export class ColorConverter {
   }
 
   saveColor() {
-    // TODO: Integrate with ColorCollection storage
     const colors = JSON.parse(localStorage.getItem('savedColors') || '[]')
+    const rgb = this.hexToRgb(this.currentColor)
+    
+    // Check if color already exists
+    const existingColor = colors.find(c => c.hex.toLowerCase() === this.currentColor.toLowerCase())
+    if (existingColor) {
+      existingColor.lastUsed = new Date().toISOString()
+      existingColor.usageCount = (existingColor.usageCount || 0) + 1
+      localStorage.setItem('savedColors', JSON.stringify(colors))
+      this.showToast('Color usage updated!')
+      return
+    }
+    
     const colorData = {
       hex: this.currentColor,
+      r: rgb.r,
+      g: rgb.g,
+      b: rgb.b,
       timestamp: new Date().toISOString(),
-      id: Date.now()
+      createdAt: new Date().toISOString(),
+      lastUsed: new Date().toISOString(),
+      id: Date.now(),
+      tags: [],
+      isFavorite: false,
+      usageCount: 1
     }
     
     colors.push(colorData)
     localStorage.setItem('savedColors', JSON.stringify(colors))
     
-    alert('Color saved successfully!')
+    this.showToast('Color saved successfully!')
   }
 
   updateAccessibilityInfo() {

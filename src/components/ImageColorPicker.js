@@ -354,20 +354,57 @@ export class ImageColorPicker {
     document.getElementById('extracted-colors-section').classList.remove('hidden')
   }
 
+  addExtractedColor(hex, r, g, b) {
+    // Check if color already exists
+    const existingColor = this.extractedColors.find(color => color.hex.toLowerCase() === hex.toLowerCase())
+    if (existingColor) {
+      return // Don't add duplicates
+    }
+    
+    const colorData = {
+      hex: hex,
+      r: r,
+      g: g,
+      b: b,
+      timestamp: new Date().toISOString(),
+      id: Date.now() + Math.random() // Ensure uniqueness
+    }
+    
+    this.extractedColors.push(colorData)
+    this.updateColorGrid()
+  }
+
   updateColorGrid() {
     const colorGrid = document.getElementById('color-grid')
+    const extractedSection = document.getElementById('extracted-colors-section')
     
-    colorGrid.innerHTML = this.extractedColors.map(color => `
-      <div class="group relative">
-        <div class="aspect-square rounded-lg border-2 border-gray-200 cursor-pointer hover:border-gray-400 transition-colors"
-             style="background-color: ${color.hex}"
-             title="${color.hex}">
+    if (this.extractedColors.length > 0) {
+      extractedSection.classList.remove('hidden')
+      
+      colorGrid.innerHTML = this.extractedColors.map(color => `
+        <div class="group relative">
+          <div class="aspect-square rounded border-2 border-gray-200 cursor-pointer hover:border-gray-400 transition-colors"
+               style="background-color: ${color.hex}"
+               onclick="navigator.clipboard.writeText('${color.hex}'); this.showToast('Copied ${color.hex}')"
+               title="Click to copy ${color.hex}">
+          </div>
+          <div class="text-xs text-center mt-1 font-mono">${color.hex}</div>
+          
+          <!-- Remove button -->
+          <button class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                  onclick="this.removeExtractedColor('${color.id}')" title="Remove">
+            ×
+          </button>
         </div>
-        <div class="text-xs text-center mt-1 font-mono">${color.hex}</div>
-        <button class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                onclick="this.closest('.group').remove()">×</button>
-      </div>
-    `).join('')
+      `).join('')
+    } else {
+      extractedSection.classList.add('hidden')
+    }
+  }
+
+  removeExtractedColor(colorId) {
+    this.extractedColors = this.extractedColors.filter(color => color.id.toString() !== colorId)
+    this.updateColorGrid()
   }
 
   clearImage() {

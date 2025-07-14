@@ -53,4 +53,20 @@
       opacity: 1;
     }
   }
+
+  .filter-btn {
+    @apply px-3 py-1 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors duration-200;
+  }
+  
+  .filter-btn.active {
+    @apply bg-primary-500 text-white hover:bg-primary-600;
+  }
+  
+  .draggable {
+    @apply transform transition-transform duration-200;
+  }
+  
+  .draggable:hover {
+    @apply scale-105;
+  }
 }
