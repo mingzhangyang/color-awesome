@@ -21,6 +21,10 @@
     @apply bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors duration-200;
   }
   
+  .btn-sm {
+    @apply bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-1 px-3 rounded transition-colors duration-200 text-sm;
+  }
+
   .card {
     @apply bg-white rounded-lg shadow-sm border border-gray-200 p-6;
   }
@@ -33,5 +37,20 @@
 @layer utilities {
   .text-gradient {
     @apply bg-gradient-to-r from-primary-500 to-secondary-500 bg-clip-text text-transparent;
+  }
+  
+  .animate-slide-up {
+    animation: slideUp 0.3s ease-out;
+  }
+  
+  @keyframes slideUp {
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
   }
 }

@@ -39,13 +39,39 @@ export class ImageColorPicker {
         <div id="canvas-container" class="hidden">
           <div class="card">
             <div class="flex justify-between items-center mb-4">
-              <h3 class="text-lg font-semibold">Click on the image to pick colors</h3>
-              <button class="btn-secondary" id="clear-image">Clear Image</button>
+              <div>
+                <h3 class="text-lg font-semibold">Click on the image to pick colors</h3>
+                <p class="text-sm text-gray-600" id="cursor-info">Move mouse over image to see color preview</p>
+              </div>
+              <div class="flex space-x-2">
+                <button class="btn-secondary" id="toggle-eyedropper" title="Toggle Eyedropper Mode">
+                  🔍 Eyedropper
+                </button>
+                <button class="btn-secondary" id="clear-image">Clear Image</button>
+              </div>
             </div>
-            <div class="relative">
-              <canvas id="image-canvas" class="max-w-full h-auto border rounded cursor-crosshair"></canvas>
-              <div id="color-picker-info" class="absolute top-2 left-2 bg-black bg-opacity-75 text-white px-2 py-1 rounded text-sm hidden">
-                Click to pick color
+            
+            <!-- Zoom and Tool Controls -->
+            <div class="flex justify-between items-center mb-4 p-3 bg-gray-50 rounded">
+              <div class="flex items-center space-x-4">
+                <span class="text-sm font-medium">Zoom:</span>
+                <button class="btn-sm" id="zoom-out">−</button>
+                <span class="text-sm font-mono" id="zoom-level">100%</span>
+                <button class="btn-sm" id="zoom-in">+</button>
+                <button class="btn-sm" id="zoom-reset">Reset</button>
+              </div>
+              
+              <div class="flex items-center space-x-2">
+                <div class="w-8 h-8 border-2 border-gray-300 rounded" id="live-color-preview" style="background-color: #ffffff"></div>
+                <span class="text-sm font-mono" id="live-color-hex">#ffffff</span>
+              </div>
+            </div>
+            
+            <div class="relative overflow-auto max-h-96 border rounded" id="canvas-wrapper">
+              <canvas id="image-canvas" class="cursor-crosshair transition-transform" style="transform-origin: top left;"></canvas>
+              <div id="color-picker-info" class="absolute top-2 left-2 bg-black bg-opacity-75 text-white px-2 py-1 rounded text-sm pointer-events-none">
+                <div id="picker-coordinates"></div>
+                <div id="picker-color"></div>
               </div>
             </div>
           </div>
@@ -158,6 +184,85 @@ export class ImageColorPicker {
     document.getElementById('analyze-colors')?.addEventListener('click', () => {
       this.analyzeColors()
     })
+
+    // Enhanced canvas interactions
+    this.setupCanvasInteractions()
+  }
+
+  setupCanvasInteractions() {
+    const canvas = document.getElementById('image-canvas')
+    const colorPreview = document.getElementById('live-color-preview')
+    const colorHex = document.getElementById('live-color-hex')
+    const pickerInfo = document.getElementById('color-picker-info')
+    const coordinates = document.getElementById('picker-coordinates')
+    const pickerColor = document.getElementById('picker-color')
+    
+    this.zoomLevel = 1
+    this.isEyedropperMode = false
+    
+    // Zoom controls
+    document.getElementById('zoom-in')?.addEventListener('click', () => {
+      this.zoomLevel = Math.min(this.zoomLevel * 1.2, 5)
+      this.updateZoom()
+    })
+    
+    document.getElementById('zoom-out')?.addEventListener('click', () => {
+      this.zoomLevel = Math.max(this.zoomLevel / 1.2, 0.1)
+      this.updateZoom()
+    })
+    
+    document.getElementById('zoom-reset')?.addEventListener('click', () => {
+      this.zoomLevel = 1
+      this.updateZoom()
+    })
+    
+    // Eyedropper toggle
+    document.getElementById('toggle-eyedropper')?.addEventListener('click', () => {
+      this.isEyedropperMode = !this.isEyedropperMode
+      const btn = document.getElementById('toggle-eyedropper')
+      if (this.isEyedropperMode) {
+        btn.textContent = '🎯 Normal Mode'
+        btn.classList.add('bg-primary-100', 'border-primary-300')
+        canvas.style.cursor = 'crosshair'
+      } else {
+        btn.textContent = '🔍 Eyedropper'
+        btn.classList.remove('bg-primary-100', 'border-primary-300')
+        canvas.style.cursor = 'pointer'
+      }
+    })
+    
+    // Mouse move for live preview
+    canvas?.addEventListener('mousemove', (e) => {
+      if (!this.ctx || !this.imageData) return
+      
+      const rect = canvas.getBoundingClientRect()
+      const scaleX = canvas.width / rect.width
+      const scaleY = canvas.height / rect.height
+      
+      const x = Math.floor((e.clientX - rect.left) * scaleX / this.zoomLevel)
+      const y = Math.floor((e.clientY - rect.top) * scaleY / this.zoomLevel)
+      
+      if (x >= 0 && x < canvas.width && y >= 0 && y < canvas.height) {
+        const pixelData = this.getPixelColor(x, y)
+        const hex = this.rgbToHex(pixelData.r, pixelData.g, pixelData.b)
+        
+        if (colorPreview) colorPreview.style.backgroundColor = hex
+        if (colorHex) colorHex.textContent = hex
+        
+        if (coordinates) coordinates.textContent = `${x}, ${y}`
+        if (pickerColor) pickerColor.textContent = hex
+        
+        if (pickerInfo) {
+          pickerInfo.style.display = 'block'
+          pickerInfo.style.left = `${e.clientX - rect.left + 10}px`
+          pickerInfo.style.top = `${e.clientY - rect.top - 40}px`
+        }
+      }
+    })
+    
+    canvas?.addEventListener('mouseleave', () => {
+      if (pickerInfo) pickerInfo.style.display = 'none'
+    })
   }
 
   loadImage(file) {
@@ -198,12 +303,23 @@ export class ImageColorPicker {
     this.ctx = ctx
     this.imageData = ctx.getImageData(0, 0, displayWidth, displayHeight)
 
+    // Initialize zoom and interaction features
+    this.zoomLevel = 1
+    this.isEyedropperMode = false
+    this.updateZoom()
+
     // Show canvas
     canvasContainer.classList.remove('hidden')
     
     // Clear previous colors
     this.extractedColors = []
     this.updateColorGrid()
+    
+    // Setup enhanced interactions if not already done
+    if (!this.interactionsSetup) {
+      this.setupCanvasInteractions()
+      this.interactionsSetup = true
+    }
   }
 
   pickColorFromCanvas(event) {
@@ -297,8 +413,59 @@ export class ImageColorPicker {
       return
     }
 
-    alert('Dominant color extraction coming soon!')
-    // TODO: Implement dominant color extraction algorithm
+    // Get all pixel data
+    const data = this.imageData.data
+    const colorMap = new Map()
+    
+    // Sample every 4th pixel for performance (can be adjusted)
+    const step = 4
+    
+    for (let i = 0; i < data.length; i += 4 * step) {
+      const r = data[i]
+      const g = data[i + 1]
+      const b = data[i + 2]
+      const a = data[i + 3]
+      
+      // Skip transparent pixels
+      if (a < 128) continue
+      
+      // Group similar colors (reduce precision for better clustering)
+      const clusteredR = Math.round(r / 16) * 16
+      const clusteredG = Math.round(g / 16) * 16
+      const clusteredB = Math.round(b / 16) * 16
+      
+      const colorKey = `${clusteredR},${clusteredG},${clusteredB}`
+      
+      if (colorMap.has(colorKey)) {
+        colorMap.set(colorKey, {
+          count: colorMap.get(colorKey).count + 1,
+          r: clusteredR,
+          g: clusteredG,
+          b: clusteredB
+        })
+      } else {
+        colorMap.set(colorKey, {
+          count: 1,
+          r: clusteredR,
+          g: clusteredG,
+          b: clusteredB
+        })
+      }
+    }
+    
+    // Sort by frequency and get top 8 colors
+    const sortedColors = Array.from(colorMap.values())
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 8)
+    
+    // Clear existing colors and add dominant ones
+    this.extractedColors = []
+    sortedColors.forEach(color => {
+      const hex = this.rgbToHex(color.r, color.g, color.b)
+      this.addExtractedColor(hex, color.r, color.g, color.b)
+    })
+    
+    this.showToast(`Found ${sortedColors.length} dominant colors!`)
   }
 
   generatePalette() {
@@ -307,8 +474,66 @@ export class ImageColorPicker {
       return
     }
 
-    alert('Palette generation coming soon!')
-    // TODO: Implement palette generation algorithm
+    // First extract dominant colors
+    const data = this.imageData.data
+    const colorMap = new Map()
+    
+    // Sample pixels for analysis
+    for (let i = 0; i < data.length; i += 16) {
+      const r = data[i]
+      const g = data[i + 1]
+      const b = data[i + 2]
+      const a = data[i + 3]
+      
+      if (a < 128) continue
+      
+      // Convert to HSL for better color harmony
+      const hsl = this.rgbToHsl(r, g, b)
+      
+      // Group colors by hue (30-degree segments)
+      const hueGroup = Math.floor(hsl.h / 30) * 30
+      const key = `${hueGroup}-${Math.floor(hsl.s / 20)}-${Math.floor(hsl.l / 20)}`
+      
+      if (colorMap.has(key)) {
+        const existing = colorMap.get(key)
+        colorMap.set(key, {
+          count: existing.count + 1,
+          r: Math.round((existing.r * existing.count + r) / (existing.count + 1)),
+          g: Math.round((existing.g * existing.count + g) / (existing.count + 1)),
+          b: Math.round((existing.b * existing.count + b) / (existing.count + 1)),
+          hue: hueGroup
+        })
+      } else {
+        colorMap.set(key, { count: 1, r, g, b, hue: hueGroup })
+      }
+    }
+    
+    // Get top colors from different hue ranges for diversity
+    const hueGroups = new Map()
+    Array.from(colorMap.values())
+      .sort((a, b) => b.count - a.count)
+      .forEach(color => {
+        if (!hueGroups.has(color.hue) && hueGroups.size < 6) {
+          hueGroups.set(color.hue, color)
+        }
+      })
+    
+    // If we don't have enough diverse colors, fill with top colors
+    const remainingColors = Array.from(colorMap.values())
+      .sort((a, b) => b.count - a.count)
+      .filter(color => !Array.from(hueGroups.values()).includes(color))
+      .slice(0, 6 - hueGroups.size)
+    
+    const finalColors = [...hueGroups.values(), ...remainingColors]
+    
+    // Clear and add generated palette
+    this.extractedColors = []
+    finalColors.forEach(color => {
+      const hex = this.rgbToHex(color.r, color.g, color.b)
+      this.addExtractedColor(hex, color.r, color.g, color.b)
+    })
+    
+    this.showToast(`Generated palette with ${finalColors.length} harmonious colors!`)
   }
 
   analyzeColors() {
@@ -317,8 +542,138 @@ export class ImageColorPicker {
       return
     }
 
-    alert('Color analysis coming soon!')
-    // TODO: Implement color analysis features
+    // Analyze the extracted colors
+    const analysis = {
+      totalColors: this.extractedColors.length,
+      avgBrightness: 0,
+      avgSaturation: 0,
+      hueDistribution: new Map(),
+      colorTemperature: 'neutral'
+    }
+    
+    let totalBrightness = 0
+    let totalSaturation = 0
+    let warmColors = 0
+    let coolColors = 0
+    
+    this.extractedColors.forEach(colorData => {
+      const hsl = this.rgbToHsl(colorData.r, colorData.g, colorData.b)
+      
+      totalBrightness += hsl.l
+      totalSaturation += hsl.s
+      
+      // Categorize hue
+      const hue = hsl.h
+      let hueCategory = ''
+      if (hue >= 0 && hue < 60) hueCategory = 'Red-Orange'
+      else if (hue >= 60 && hue < 120) hueCategory = 'Yellow-Green'
+      else if (hue >= 120 && hue < 180) hueCategory = 'Green-Cyan'
+      else if (hue >= 180 && hue < 240) hueCategory = 'Cyan-Blue'
+      else if (hue >= 240 && hue < 300) hueCategory = 'Blue-Purple'
+      else hueCategory = 'Purple-Red'
+      
+      analysis.hueDistribution.set(hueCategory, 
+        (analysis.hueDistribution.get(hueCategory) || 0) + 1)
+      
+      // Determine warm vs cool
+      if ((hue >= 0 && hue <= 60) || (hue >= 300 && hue <= 360)) {
+        warmColors++
+      } else if (hue >= 120 && hue <= 300) {
+        coolColors++
+      }
+    })
+    
+    analysis.avgBrightness = Math.round(totalBrightness / this.extractedColors.length)
+    analysis.avgSaturation = Math.round(totalSaturation / this.extractedColors.length)
+    
+    if (warmColors > coolColors * 1.5) {
+      analysis.colorTemperature = 'warm'
+    } else if (coolColors > warmColors * 1.5) {
+      analysis.colorTemperature = 'cool'
+    }
+    
+    // Display analysis results
+    this.showColorAnalysis(analysis)
+  }
+
+  showColorAnalysis(analysis) {
+    const analysisHtml = `
+      <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" id="analysis-modal">
+        <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-semibold">Color Analysis Results</h3>
+            <button class="text-gray-400 hover:text-gray-600" onclick="document.getElementById('analysis-modal').remove()">✕</button>
+          </div>
+          
+          <div class="space-y-3">
+            <div class="flex justify-between">
+              <span class="text-gray-600">Total Colors:</span>
+              <span class="font-medium">${analysis.totalColors}</span>
+            </div>
+            
+            <div class="flex justify-between">
+              <span class="text-gray-600">Average Brightness:</span>
+              <span class="font-medium">${analysis.avgBrightness}%</span>
+            </div>
+            
+            <div class="flex justify-between">
+              <span class="text-gray-600">Average Saturation:</span>
+              <span class="font-medium">${analysis.avgSaturation}%</span>
+            </div>
+            
+            <div class="flex justify-between">
+              <span class="text-gray-600">Color Temperature:</span>
+              <span class="font-medium capitalize">${analysis.colorTemperature}</span>
+            </div>
+            
+            <div>
+              <span class="text-gray-600 block mb-2">Hue Distribution:</span>
+              <div class="space-y-1">
+                ${Array.from(analysis.hueDistribution.entries()).map(([hue, count]) => 
+                  `<div class="flex justify-between text-sm">
+                    <span>${hue}:</span>
+                    <span>${count} color${count > 1 ? 's' : ''}</span>
+                  </div>`
+                ).join('')}
+              </div>
+            </div>
+          </div>
+          
+          <button class="btn-primary w-full mt-4" onclick="document.getElementById('analysis-modal').remove()">
+            Close
+          </button>
+        </div>
+      </div>
+    `
+    
+    document.body.insertAdjacentHTML('beforeend', analysisHtml)
+  }
+
+  rgbToHsl(r, g, b) {
+    r /= 255
+    g /= 255
+    b /= 255
+
+    const max = Math.max(r, g, b)
+    const min = Math.min(r, g, b)
+    let h, s, l = (max + min) / 2
+
+    if (max === min) {
+      h = s = 0 // achromatic
+    } else {
+      const d = max - min
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
+
+      switch (max) {
+        case r: h = (g - b) / d + (g < b ? 6 : 0); break
+        case g: h = (b - r) / d + 2; break
+        case b: h = (r - g) / d + 4; break
+      }
+
+      h /= 6
+    }
+
+    return { h: h * 360, s: s * 100, l: l * 100 }
   }
 
   // Utility function
@@ -327,5 +682,44 @@ export class ImageColorPicker {
       const hex = x.toString(16)
       return hex.length === 1 ? '0' + hex : hex
     }).join('')
+  }
+
+  showToast(message) {
+    const toast = document.createElement('div')
+    toast.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-slide-up'
+    toast.textContent = message
+    
+    document.body.appendChild(toast)
+    
+    setTimeout(() => {
+      toast.remove()
+    }, 3000)
+  }
+
+  updateZoom() {
+    const canvas = document.getElementById('image-canvas')
+    const zoomLevelSpan = document.getElementById('zoom-level')
+    
+    if (canvas) {
+      canvas.style.transform = `scale(${this.zoomLevel})`
+    }
+    
+    if (zoomLevelSpan) {
+      zoomLevelSpan.textContent = `${Math.round(this.zoomLevel * 100)}%`
+    }
+  }
+
+  getPixelColor(x, y) {
+    if (!this.imageData) return { r: 0, g: 0, b: 0, a: 0 }
+    
+    const canvas = document.getElementById('image-canvas')
+    const index = (y * canvas.width + x) * 4
+    
+    return {
+      r: this.imageData.data[index],
+      g: this.imageData.data[index + 1],
+      b: this.imageData.data[index + 2],
+      a: this.imageData.data[index + 3]
+    }
   }
 }
