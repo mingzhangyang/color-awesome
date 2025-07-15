@@ -251,6 +251,18 @@ export class ColorCollection {
     this.getElement('clear-all').addEventListener('click', () => {
       this.clearAll()
     })
+
+    // Clear filters buttons (using event delegation since they're created dynamically)
+    this.container.addEventListener('click', (e) => {
+      if (e.target.id === 'clear-filters-btn' || e.target.id === 'clear-filters-palettes-btn') {
+        const searchInput = this.getElement('search-input')
+        if (searchInput) {
+          searchInput.value = ''
+          this.searchQuery = ''
+          this.renderContent()
+        }
+      }
+    })
   }
 
   loadData() {
