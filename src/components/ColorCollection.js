@@ -181,13 +181,17 @@ export class ColorCollection {
 
   setupEventListeners() {
     // View toggle
-    document.querySelectorAll('.view-toggle').forEach(btn => {
+    this.container.querySelectorAll('.view-toggle').forEach(btn => {
       btn.addEventListener('click', (e) => {
+        console.log('View toggle clicked:', e.target.getAttribute('data-view'))
         this.currentView = e.target.getAttribute('data-view')
+        console.log('Current view set to:', this.currentView)
+        
         // Just update the content, don't re-render the entire component
         this.renderContent()
+        
         // Update the view toggle button styles
-        document.querySelectorAll('.view-toggle').forEach(toggleBtn => {
+        this.container.querySelectorAll('.view-toggle').forEach(toggleBtn => {
           if (toggleBtn.getAttribute('data-view') === this.currentView) {
             toggleBtn.classList.add('bg-white', 'shadow-sm')
           } else {
@@ -271,8 +275,10 @@ export class ColorCollection {
   }
 
   renderContent() {
+    console.log('renderContent called, currentView:', this.currentView)
     const contentArea = this.getElement('collection-content')
     const emptyState = this.getElement('empty-state')
+    console.log('contentArea found:', !!contentArea, 'emptyState found:', !!emptyState)
 
     if (this.currentView === 'colors') {
       let filteredColors = this.getFilteredAndSortedColors()
@@ -295,7 +301,9 @@ export class ColorCollection {
         this.renderColors(contentArea, filteredColors)
       }
     } else {
+      console.log('Rendering palettes view')
       let filteredPalettes = this.getFilteredAndSortedPalettes()
+      console.log('Filtered palettes:', filteredPalettes.length, 'Total palettes:', this.savedPalettes.length)
       
       if (filteredPalettes.length === 0 && this.savedPalettes.length === 0) {
         contentArea.innerHTML = `
