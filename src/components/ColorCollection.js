@@ -184,7 +184,16 @@ export class ColorCollection {
     document.querySelectorAll('.view-toggle').forEach(btn => {
       btn.addEventListener('click', (e) => {
         this.currentView = e.target.getAttribute('data-view')
-        this.render(document.getElementById('main-content'))
+        // Just update the content, don't re-render the entire component
+        this.renderContent()
+        // Update the view toggle button styles
+        document.querySelectorAll('.view-toggle').forEach(toggleBtn => {
+          if (toggleBtn.getAttribute('data-view') === this.currentView) {
+            toggleBtn.classList.add('bg-white', 'shadow-sm')
+          } else {
+            toggleBtn.classList.remove('bg-white', 'shadow-sm')
+          }
+        })
       })
     })
 
