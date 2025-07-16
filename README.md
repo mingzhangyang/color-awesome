@@ -5,11 +5,17 @@
 
 A powerful web application for color conversion, extraction, and management. Whether you're a designer, developer, or just someone who loves working with colors, Color Awesome provides all the tools you need to work with colors effectively.
 
-**[Live Demo](https://your-username.github.io/color-awesome/)** (replace with your actual demo link)
+**[🚀 Live Demo](https://color-awesome.pages.dev/)**
 
 ## Screenshots
 
-*(Add screenshots of your application here to give users a visual preview.)*
+### Color Converter
+![Color Converter Interface](screenshots/converter.jpeg)
+*Convert colors between multiple formats with real-time preview and easy copy functionality.*
+
+### Image Color Picker
+![Image Color Picker](screenshots/image_picker.png)
+*Extract and analyze colors from uploaded images with an intuitive interface.*
 
 ## Features
 
@@ -35,7 +41,7 @@ A powerful web application for color conversion, extraction, and management. Whe
 
 ## Getting Started
 
-1.  **Open the application:** Access the [Live Demo](https://your-username.github.io/color-awesome/) in your browser.
+1.  **Open the application:** Access the [🚀 Live Demo](https://color-awesome.pages.dev/) in your browser.
 2.  **Convert colors:** Use the conversion tools to switch between formats.
 3.  **Extract from images:** Upload an image to extract its color palette.
 4.  **Build your collection:** Save the colors you like.
