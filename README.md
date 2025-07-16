@@ -10,11 +10,11 @@ A powerful web application for color conversion, extraction, and management. Whe
 ## Screenshots
 
 ### Color Converter
-![Color Converter Interface](screenshots/converter.jpeg)
+![Color Converter Interface](screenshots/converter.png)
 *Convert colors between multiple formats with real-time preview and easy copy functionality.*
 
 ### Image Color Picker
-![Image Color Picker](screenshots/image_picker.png)
+![Image Color Picker](screenshots/image_picker.jpeg)
 *Extract and analyze colors from uploaded images with an intuitive interface.*
 
 ## Features
