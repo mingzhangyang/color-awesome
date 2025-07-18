@@ -1,3 +1,5 @@
+import { AdComponent } from './AdComponent.js'
+
 export class ColorConverter {
   constructor() {
     this.currentColor = '#3b82f6'
@@ -113,6 +115,9 @@ export class ColorConverter {
               Copy LAB
             </button>
           </div>
+
+          <!-- Ad Block -->
+          ${AdComponent.create('gridBlock').render()}
         </div>
 
         <!-- Actions -->

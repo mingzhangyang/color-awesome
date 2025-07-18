@@ -6,6 +6,7 @@ import { ColorCollection } from './components/ColorCollection.js'
 import { KeyboardShortcuts } from './utils/KeyboardShortcuts.js'
 import { UIEnhancements } from './utils/UIEnhancements.js'
 import { PerformanceOptimizer } from './utils/PerformanceOptimizer.js'
+import { AdComponent, refreshAdsOnNavigation } from './components/AdComponent.js'
 
 export class App {
   constructor() {
@@ -75,6 +76,9 @@ export class App {
   }
 
   render() {
+    // Create footer ad only
+    const footerAd = AdComponent.create('footer')
+
     this.appElement.innerHTML = `
       <div class="min-h-screen bg-gray-50">
         <!-- Header -->
@@ -99,6 +103,9 @@ export class App {
 
         <!-- Footer -->
         <footer class="bg-white border-t border-gray-200 mt-16">
+          <!-- Footer Ad -->
+          ${footerAd.render()}
+          
           <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div class="text-center text-gray-600 space-y-4">
               <p>&copy; 2025 Color Awesome. Built with ❤️ for color enthusiasts.</p>
@@ -122,6 +129,13 @@ export class App {
                   <span>⭐</span>
                   <span>Star on GitHub</span>
                 </a>
+                <span class="text-gray-300">|</span>
+                <a href="/PRIVACY_POLICY.md" 
+                   target="_blank" rel="noopener noreferrer"
+                   class="text-blue-600 hover:text-blue-800 transition-colors duration-200 flex items-center space-x-1">
+                  <span>🔒</span>
+                  <span>Privacy Policy</span>
+                </a>
               </div>
             </div>
           </div>
@@ -141,8 +155,18 @@ export class App {
     this.mobileNavigation = new MobileNavigation(this.currentView, (view) => this.switchView(view))
     this.mobileNavigation.render()
 
+    // Initialize ads
+    this.initializeAds()
+
     // Initialize current view
     this.renderCurrentView()
+  }
+
+  initializeAds() {
+    // Initialize all ads on the page
+    setTimeout(() => {
+      refreshAdsOnNavigation()
+    }, 100)
   }
 
   renderCurrentView() {
@@ -232,6 +256,9 @@ export class App {
     if (this.mobileNavigation) {
       this.mobileNavigation.updateActiveView(view)
     }
+    
+    // Refresh ads on view change
+    refreshAdsOnNavigation()
     
     // Update URL without page reload (if using hash routing)
     if (window.location.hash !== `#${view}`) {

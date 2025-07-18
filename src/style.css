@@ -74,6 +74,47 @@
   .color-item:active {
     transform: translateY(0) scale(0.98);
   }
+
+  /* Ad Container Styles */
+  .ad-container {
+    @apply transition-opacity duration-300;
+  }
+
+  .ad-unit {
+    @apply mx-auto bg-gray-50 border border-gray-200 rounded-lg overflow-hidden;
+  }
+
+  /* Grid block ad styling to match other cards */
+  .ad-unit.card {
+    @apply bg-white rounded-lg shadow-sm border border-gray-200 transition-all duration-300 hover:shadow-md;
+  }
+
+  .responsive-ad {
+    @apply max-w-full;
+  }
+
+  .ad-format-leaderboard {
+    @apply max-w-full;
+  }
+
+  .ad-format-rectangle {
+    @apply max-w-sm;
+  }
+
+  .ad-format-banner {
+    @apply max-w-xs;
+  }
+
+  /* Ad loading and error states */
+  .ad-container:empty::before {
+    content: "Advertisement";
+    @apply block text-center text-xs text-gray-400 py-2;
+  }
+
+  .ad-container.loading::after {
+    content: "Loading ad...";
+    @apply block text-center text-xs text-gray-400 py-8;
+  }
 }
 
 @layer utilities {
