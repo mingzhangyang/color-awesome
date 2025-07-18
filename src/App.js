@@ -130,7 +130,7 @@ export class App {
                   <span>Star on GitHub</span>
                 </a>
                 <span class="text-gray-300">|</span>
-                <a href="/PRIVACY_POLICY.md" 
+                <a href="/privacy-policy.html" 
                    target="_blank" rel="noopener noreferrer"
                    class="text-blue-600 hover:text-blue-800 transition-colors duration-200 flex items-center space-x-1">
                   <span>🔒</span>
