@@ -113,28 +113,28 @@ export class App {
                 <a href="mailto:contact@orangely.xyz?subject=Color%20Awesome%20-%20Question" 
                    class="text-blue-600 hover:text-blue-800 transition-colors duration-200 flex items-center space-x-1">
                   <span>📧</span>
-                  <span>Contact Developer</span>
+                  <span class="hidden sm:inline">Contact Developer</span>
                 </a>
-                <span class="text-gray-300">|</span>
+                <span class="text-gray-300 hidden sm:inline">|</span>
                 <a href="https://github.com/mingzhangyang/color-awesome/issues" 
                    target="_blank" rel="noopener noreferrer"
                    class="text-blue-600 hover:text-blue-800 transition-colors duration-200 flex items-center space-x-1">
                   <span>🐛</span>
-                  <span>Report Issues</span>
+                  <span class="hidden sm:inline">Report Issues</span>
                 </a>
-                <span class="text-gray-300">|</span>
+                <span class="text-gray-300 hidden sm:inline">|</span>
                 <a href="https://github.com/mingzhangyang/color-awesome" 
                    target="_blank" rel="noopener noreferrer"
                    class="text-blue-600 hover:text-blue-800 transition-colors duration-200 flex items-center space-x-1">
                   <span>⭐</span>
-                  <span>Star on GitHub</span>
+                  <span class="hidden sm:inline">Star on GitHub</span>
                 </a>
-                <span class="text-gray-300">|</span>
+                <span class="text-gray-300 hidden sm:inline">|</span>
                 <a href="/privacy-policy.html" 
                    target="_blank" rel="noopener noreferrer"
                    class="text-blue-600 hover:text-blue-800 transition-colors duration-200 flex items-center space-x-1">
                   <span>🔒</span>
-                  <span>Privacy Policy</span>
+                  <span class="hidden sm:inline">Privacy Policy</span>
                 </a>
               </div>
             </div>
