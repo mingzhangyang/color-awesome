@@ -108,7 +108,7 @@ export class App {
           
           <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div class="text-center text-gray-600 space-y-4">
-              <p>&copy; 2025 Color Awesome. Built with ❤️ for color enthusiasts.</p>
+              <p>&copy; 2025 Orangely. Built with ❤️ for color enthusiasts.</p>
               <div class="flex justify-center items-center space-x-6 text-sm">
                 <a href="mailto:contact@orangely.xyz?subject=Color%20Awesome%20-%20Question" 
                    class="text-blue-600 hover:text-blue-800 transition-colors duration-200 flex items-center space-x-1">
