@@ -37,6 +37,11 @@ export class ImageColorPicker {
                 <button class="btn-primary mt-2">Choose File</button>
                 <input type="file" id="image-input" accept="image/*" class="hidden">
               </div>
+              <div class="text-sm text-gray-500">or</div>
+              <div>
+                <input type="url" id="url-input" placeholder="Enter image URL" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500">
+                <button class="btn-secondary mt-2" id="load-url">Load from URL</button>
+              </div>
               <p class="text-xs text-gray-400">PNG, JPG, JPEG up to 10MB</p>
             </div>
           </div>
@@ -129,6 +134,8 @@ export class ImageColorPicker {
     const imageInput = this.getElement('image-input')
     const uploadArea = this.getElement('upload-area')
     const chooseFileBtn = uploadArea.querySelector('.btn-primary')
+    const urlInput = this.getElement('url-input')
+    const loadUrlBtn = this.getElement('load-url')
 
     chooseFileBtn.addEventListener('click', () => imageInput.click())
 
@@ -136,6 +143,23 @@ export class ImageColorPicker {
       const file = e.target.files[0]
       if (file) {
         this.loadImage(file)
+      }
+    })
+
+    // URL input
+    loadUrlBtn.addEventListener('click', () => {
+      const url = urlInput.value.trim()
+      if (url) {
+        this.loadImageFromUrl(url)
+      }
+    })
+
+    urlInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        const url = urlInput.value.trim()
+        if (url) {
+          this.loadImageFromUrl(url)
+        }
       }
     })
 
@@ -286,6 +310,43 @@ export class ImageColorPicker {
     }
     
     reader.readAsDataURL(file)
+  }
+
+  loadImageFromUrl(url) {
+    // Basic URL validation
+    if (!url.match(/^https?:\/\/.+\.(jpg|jpeg|png|gif|webp|bmp)(\?.*)?$/i) && 
+        !url.match(/^https?:\/\/.+/i)) {
+      alert('Please enter a valid image URL')
+      return
+    }
+
+    const img = new Image()
+    
+    // Show loading state
+    const loadUrlBtn = this.getElement('load-url')
+    const originalText = loadUrlBtn.textContent
+    loadUrlBtn.textContent = 'Loading...'
+    loadUrlBtn.disabled = true
+    
+    img.onload = () => {
+      this.displayImage(img)
+      loadUrlBtn.textContent = originalText
+      loadUrlBtn.disabled = false
+      
+      // Clear the URL input
+      const urlInput = this.getElement('url-input')
+      urlInput.value = ''
+    }
+    
+    img.onerror = () => {
+      alert('Failed to load image from URL. Please check the URL and try again.')
+      loadUrlBtn.textContent = originalText
+      loadUrlBtn.disabled = false
+    }
+    
+    // Handle CORS issues by adding crossOrigin attribute
+    img.crossOrigin = 'anonymous'
+    img.src = url
   }
 
   displayImage(img) {
