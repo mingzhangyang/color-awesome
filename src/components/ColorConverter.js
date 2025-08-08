@@ -14,7 +14,7 @@ export class ColorConverter {
   render(container) {
     this.container = container
     container.innerHTML = `
-      <div class="space-y-8">
+      <div class="color-converter space-y-8">
         <!-- Hero Section -->
         <div class="text-center">
           <h2 class="text-3xl font-bold text-gray-900 mb-4">Color Converter</h2>
@@ -26,7 +26,7 @@ export class ColorConverter {
 
         <!-- Color Preview -->
         <div class="card max-w-md mx-auto text-center">
-          <div class="w-full h-32 rounded-lg mb-4 border-2 border-gray-200" 
+          <div class="w-full h-32 rounded-lg mb-4 border-2 border-gray-200 color-preview" 
                style="background-color: ${this.currentColor}" 
                id="color-preview">
           </div>
@@ -36,7 +36,7 @@ export class ColorConverter {
         <!-- Conversion Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           <!-- HEX Input -->
-          <div class="card">
+          <div class="card tool-section">
             <label class="block text-sm font-medium text-gray-700 mb-2">HEX</label>
             <input 
               type="text" 
@@ -45,20 +45,20 @@ export class ColorConverter {
               placeholder="#3b82f6"
               value="${this.currentColor}"
             >
-            <button class="btn-secondary mt-2 w-full" id="copy-hex">
+            <button class="btn-secondary mt-2 w-full copy-color-btn" id="copy-hex">
               Copy HEX
             </button>
           </div>
 
           <!-- RGB Input -->
-          <div class="card">
+          <div class="card tool-section">
             <label class="block text-sm font-medium text-gray-700 mb-2">RGB</label>
             <div class="space-y-2">
               <input type="number" id="rgb-r" class="input-field" placeholder="R" min="0" max="255">
               <input type="number" id="rgb-g" class="input-field" placeholder="G" min="0" max="255">
               <input type="number" id="rgb-b" class="input-field" placeholder="B" min="0" max="255">
             </div>
-            <button class="btn-secondary mt-2 w-full" id="copy-rgb">
+            <button class="btn-secondary mt-2 w-full copy-color-btn" id="copy-rgb">
               Copy RGB
             </button>
           </div>
@@ -71,7 +71,7 @@ export class ColorConverter {
               <input type="number" id="hsl-s" class="input-field" placeholder="S%" min="0" max="100">
               <input type="number" id="hsl-l" class="input-field" placeholder="L%" min="0" max="100">
             </div>
-            <button class="btn-secondary mt-2 w-full" id="copy-hsl">
+            <button class="btn-secondary mt-2 w-full copy-color-btn" id="copy-hsl">
               Copy HSL
             </button>
           </div>
@@ -84,7 +84,7 @@ export class ColorConverter {
               <input type="number" id="hsv-s" class="input-field" placeholder="S%" min="0" max="100">
               <input type="number" id="hsv-v" class="input-field" placeholder="V%" min="0" max="100">
             </div>
-            <button class="btn-secondary mt-2 w-full" id="copy-hsv">
+            <button class="btn-secondary mt-2 w-full copy-color-btn" id="copy-hsv">
               Copy HSV
             </button>
           </div>
@@ -98,7 +98,7 @@ export class ColorConverter {
               <input type="number" id="cmyk-y" class="input-field" placeholder="Y%" min="0" max="100">
               <input type="number" id="cmyk-k" class="input-field" placeholder="K%" min="0" max="100">
             </div>
-            <button class="btn-secondary mt-2 w-full" id="copy-cmyk">
+            <button class="btn-secondary mt-2 w-full copy-color-btn" id="copy-cmyk">
               Copy CMYK
             </button>
           </div>
@@ -111,7 +111,7 @@ export class ColorConverter {
               <input type="number" id="lab-a" class="input-field" placeholder="A" min="-128" max="127">
               <input type="number" id="lab-b" class="input-field" placeholder="B" min="-128" max="127">
             </div>
-            <button class="btn-secondary mt-2 w-full" id="copy-lab">
+            <button class="btn-secondary mt-2 w-full copy-color-btn" id="copy-lab">
               Copy LAB
             </button>
           </div>
@@ -122,7 +122,7 @@ export class ColorConverter {
 
         <!-- Actions -->
         <div class="flex justify-center space-x-4">
-          <button class="btn-primary" id="save-color">
+          <button class="btn-primary save-color-btn" id="save-color">
             💾 Save Color
           </button>
           <button class="btn-secondary" id="random-color">
@@ -183,7 +183,7 @@ export class ColorConverter {
             </div>
           </div>
         </div>
-        <div class="card">
+        <div class="card tool-section">
           <div class="flex justify-between items-center mb-4">
             <h3 class="text-lg font-semibold">Color Harmony</h3>
             <select id="harmony-type" class="input-field w-auto">
@@ -392,6 +392,18 @@ export class ColorConverter {
     if (saveHarmony) {
       saveHarmony.addEventListener('click', () => {
         this.saveHarmonyPalette()
+      })
+    }
+
+    // Delegate clicks for harmony color tiles to copy hex and toast
+    const harmonyContainer = getElement('harmony-colors')
+    if (harmonyContainer) {
+      harmonyContainer.addEventListener('click', (e) => {
+        const tile = e.target.closest('.harmony-color-tile')
+        if (tile && tile.dataset.hex) {
+          navigator.clipboard.writeText(tile.dataset.hex)
+          this.showToast(`Copied ${tile.dataset.hex}`)
+        }
       })
     }
 
@@ -826,11 +838,11 @@ export class ColorConverter {
     const harmonyContainer = this.getElement('harmony-colors')
     harmonyContainer.innerHTML = colors.map(color => `
       <div class="group relative">
-        <div class="h-16 rounded border-2 border-gray-200 cursor-pointer hover:border-gray-400 transition-colors"
-             style="background-color: ${color}"
-             title="Click to copy ${color}"
-             onclick="navigator.clipboard.writeText('${color}'); this.showToast('Copied ${color}')">
-        </div>
+        <button class="h-16 w-full rounded border-2 border-gray-200 cursor-pointer hover:border-gray-400 transition-colors harmony-color-tile"
+                style="background-color: ${color}"
+                title="Click to copy ${color}"
+                data-hex="${color}">
+        </button>
         <div class="text-xs text-center mt-1 font-mono">${color}</div>
       </div>
     `).join('')
@@ -1102,7 +1114,7 @@ export class ColorConverter {
 
   showToast(message) {
     const toast = document.createElement('div')
-    toast.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-slide-up'
+    toast.className = 'toast-item fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-slide-up'
     toast.textContent = message
     
     document.body.appendChild(toast)

@@ -402,6 +402,8 @@ export class UIEnhancements {
       container = document.createElement('div')
       container.id = 'toast-container'
       container.className = 'fixed top-4 right-4 z-50 max-w-sm'
+      container.setAttribute('role', 'status')
+      container.setAttribute('aria-live', 'polite')
       document.body.appendChild(container)
     }
     return container

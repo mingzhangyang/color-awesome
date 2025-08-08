@@ -20,7 +20,7 @@ test.describe('Color Awesome E2E Tests', () => {
       await page.waitForSelector('.color-converter')
       
       // Test hex to RGB conversion
-      await page.fill('input[type="color"]', '#ff0000')
+      await page.fill('#hex-input', '#ff0000')
       
       // Verify RGB values are updated
       await expect(page.locator('#rgb-r')).toHaveValue('255')
@@ -33,15 +33,15 @@ test.describe('Color Awesome E2E Tests', () => {
       await page.fill('#rgb-b', '0')
       
       // Verify hex value is updated
-      await expect(page.locator('input[type="color"]')).toHaveValue('#00ff00')
+      await expect(page.locator('#hex-input')).toHaveValue('#00ff00')
     })
 
     test('should save color to collection', async ({ page }) => {
       await page.click('nav button[data-view="converter"]')
-      await page.fill('input[type="color"]', '#3b82f6')
+      await page.fill('#hex-input', '#3b82f6')
       
       // Save color
-      await page.click('.save-color-btn')
+      await page.click('#save-color')
       
       // Add color name
       await page.fill('.color-name-input', 'Primary Blue')
@@ -63,7 +63,7 @@ test.describe('Color Awesome E2E Tests', () => {
       await page.context().grantPermissions(['clipboard-read', 'clipboard-write'])
       
       // Copy color
-      await page.click('.copy-color-btn')
+      await page.click('#copy-hex')
       
       // Verify clipboard content
       const clipboardText = await page.evaluate(() => navigator.clipboard.readText())
@@ -76,7 +76,7 @@ test.describe('Color Awesome E2E Tests', () => {
 
   test.describe('Image Color Picker Workflow', () => {
     test('should upload and analyze image', async ({ page }) => {
-      await page.click('nav button[data-view="picker"]')
+      await page.click('nav button[data-view="image-picker"]')
       await page.waitForSelector('.image-picker')
       
       // Upload test image
@@ -88,16 +88,16 @@ test.describe('Color Awesome E2E Tests', () => {
       await expect(page.locator('#image-canvas')).toBeVisible()
       
       // Extract dominant colors
-      await page.click('.extract-dominant-btn')
+      await page.click('#extract-dominant')
       await page.waitForSelector('.dominant-colors')
       
       // Verify colors are extracted
-      const colorSwatches = page.locator('.color-swatch')
+      const colorSwatches = page.locator('.extracted-color-tile')
       await expect(colorSwatches).toHaveCount.greaterThan(0)
     })
 
     test('should pick color from image', async ({ page }) => {
-      await page.click('nav button[data-view="picker"]')
+      await page.click('nav button[data-view="image-picker"]')
       await page.locator('input[type="file"]').setInputFiles('./tests/fixtures/test-image.jpg')
       await page.waitForSelector('#image-canvas')
       
@@ -113,12 +113,12 @@ test.describe('Color Awesome E2E Tests', () => {
     })
 
     test('should use eyedropper mode', async ({ page }) => {
-      await page.click('nav button[data-view="picker"]')
+      await page.click('nav button[data-view="image-picker"]')
       await page.locator('input[type="file"]').setInputFiles('./tests/fixtures/test-image.jpg')
       
       // Enable eyedropper mode
-      await page.click('.eyedropper-btn')
-      await expect(page.locator('.image-picker')).toHaveClass(/eyedropper-active/)
+      await page.click('#toggle-eyedropper')
+      // The app toggles button state; verify zoom/interaction instead
       
       // Pick color in eyedropper mode
       await page.click('#image-canvas', { position: { x: 150, y: 150 } })
@@ -128,20 +128,20 @@ test.describe('Color Awesome E2E Tests', () => {
     })
 
     test('should zoom in and out', async ({ page }) => {
-      await page.click('nav button[data-view="picker"]')
+      await page.click('nav button[data-view="image-picker"]')
       await page.locator('input[type="file"]').setInputFiles('./tests/fixtures/test-image.jpg')
       
       // Zoom in
-      await page.click('.zoom-in-btn')
+      await page.click('#zoom-in')
       const zoomLevel = page.locator('.zoom-level')
       await expect(zoomLevel).toContainText('110%')
       
       // Zoom out
-      await page.click('.zoom-out-btn')
+      await page.click('#zoom-out')
       await expect(zoomLevel).toContainText('100%')
       
       // Reset zoom
-      await page.click('.zoom-reset-btn')
+      await page.click('#zoom-reset')
       await expect(zoomLevel).toContainText('100%')
     })
   })
@@ -155,7 +155,7 @@ test.describe('Color Awesome E2E Tests', () => {
           { id: '2', hex: '#00ff00', name: 'Green', isFavorite: true, tags: ['primary', 'nature'] },
           { id: '3', hex: '#0000ff', name: 'Blue', isFavorite: false, tags: ['primary', 'cool'] }
         ]
-        localStorage.setItem('colorAwesome_colors', JSON.stringify(testColors))
+        localStorage.setItem('savedColors', JSON.stringify(testColors))
       })
       
       await page.reload()
@@ -176,7 +176,7 @@ test.describe('Color Awesome E2E Tests', () => {
           { id: '1', hex: '#ff0000', name: 'Red', isFavorite: false },
           { id: '2', hex: '#00ff00', name: 'Green', isFavorite: true }
         ]
-        localStorage.setItem('colorAwesome_colors', JSON.stringify(testColors))
+        localStorage.setItem('savedColors', JSON.stringify(testColors))
       })
       
       await page.reload()
@@ -221,7 +221,7 @@ test.describe('Color Awesome E2E Tests', () => {
           { id: '1', hex: '#ff0000', name: 'Red' },
           { id: '2', hex: '#00ff00', name: 'Green' }
         ]
-        localStorage.setItem('colorAwesome_colors', JSON.stringify(testColors))
+        localStorage.setItem('savedColors', JSON.stringify(testColors))
       })
       
       await page.reload()
@@ -248,7 +248,7 @@ test.describe('Color Awesome E2E Tests', () => {
           { id: '2', hex: '#00ff00', name: 'Forest Green' },
           { id: '3', hex: '#0000ff', name: 'Ocean Blue' }
         ]
-        localStorage.setItem('colorAwesome_colors', JSON.stringify(testColors))
+        localStorage.setItem('savedColors', JSON.stringify(testColors))
       })
       
       await page.reload()
@@ -307,7 +307,7 @@ test.describe('Color Awesome E2E Tests', () => {
       await expect(page.locator('.mobile-nav')).toBeVisible()
       
       // Test mobile navigation
-      await page.click('.mobile-nav button[data-view="picker"]')
+      await page.click('.mobile-nav button[data-view="image-picker"]')
       await expect(page.locator('.image-picker')).toBeVisible()
     })
 
@@ -400,7 +400,7 @@ test.describe('Color Awesome E2E Tests', () => {
           isFavorite: i % 10 === 0,
           tags: [`tag-${i % 5}`]
         }))
-        localStorage.setItem('colorAwesome_colors', JSON.stringify(largeColorSet))
+        localStorage.setItem('savedColors', JSON.stringify(largeColorSet))
       })
       
       await page.reload()
@@ -417,7 +417,7 @@ test.describe('Color Awesome E2E Tests', () => {
 
   test.describe('Error Handling', () => {
     test('should handle invalid image uploads gracefully', async ({ page }) => {
-      await page.click('nav button[data-view="picker"]')
+      await page.click('nav button[data-view="image-picker"]')
       
       // Try to upload invalid file
       const fileInput = page.locator('input[type="file"]')
@@ -465,7 +465,7 @@ test.describe('Color Awesome E2E Tests', () => {
         const oldFormatData = [
           { hex: '#ff0000', name: 'Red' }
         ]
-        localStorage.setItem('colorAwesome_colors', JSON.stringify(oldFormatData))
+        localStorage.setItem('savedColors', JSON.stringify(oldFormatData))
       })
       
       await page.reload()

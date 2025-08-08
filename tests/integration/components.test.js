@@ -272,6 +272,14 @@ describe('Component Integration Tests', () => {
       canvas.id = 'image-canvas'
       container.appendChild(canvas)
 
+      // Provide a mocked 2D context for JSDOM canvas
+      canvas.getContext = vi.fn().mockReturnValue({
+        fillStyle: '',
+        fillRect: vi.fn(),
+        getImageData: vi.fn().mockReturnValue({
+          data: new Uint8ClampedArray([255, 0, 0, 255])
+        })
+      })
       const ctx = canvas.getContext('2d')
       ctx.fillStyle = '#ff0000'
       ctx.fillRect(0, 0, 100, 100)
@@ -284,13 +292,6 @@ describe('Component Integration Tests', () => {
 
       canvas.dispatchEvent(clickEvent)
 
-      // Mock getImageData
-      const mockImageData = {
-        data: new Uint8ClampedArray([255, 0, 0, 255]) // Red pixel
-      }
-      
-      vi.spyOn(ctx, 'getImageData').mockReturnValue(mockImageData)
-      
       const imageData = ctx.getImageData(50, 50, 1, 1)
       expect(imageData.data[0]).toBe(255) // Red
       expect(imageData.data[1]).toBe(0)   // Green
@@ -304,7 +305,7 @@ describe('Component Integration Tests', () => {
       container.innerHTML = `
         <nav id="navigation">
           <button data-view="converter" class="nav-btn active">Converter</button>
-          <button data-view="picker" class="nav-btn">Picker</button>
+          <button data-view="image-picker" class="nav-btn">Picker</button>
           <button data-view="collection" class="nav-btn">Collection</button>
         </nav>
         <main id="main-content">
@@ -312,7 +313,7 @@ describe('Component Integration Tests', () => {
         </main>
       `
 
-      const pickerBtn = container.querySelector('[data-view="picker"]')
+      const pickerBtn = container.querySelector('[data-view="image-picker"]')
       const converterBtn = container.querySelector('[data-view="converter"]')
       const mainContent = container.querySelector('#main-content')
 
@@ -321,7 +322,7 @@ describe('Component Integration Tests', () => {
       // Mock view switching
       converterBtn.classList.remove('active')
       pickerBtn.classList.add('active')
-      mainContent.innerHTML = '<div class="picker-view">Picker Content</div>'
+      mainContent.innerHTML = '<div class="image-picker-view">Picker Content</div>'
 
       expect(pickerBtn.classList.contains('active')).toBe(true)
       expect(converterBtn.classList.contains('active')).toBe(false)
@@ -423,7 +424,7 @@ describe('Component Integration Tests', () => {
       container.innerHTML = `
         <nav class="mobile-nav" style="display: none;">
           <button class="mobile-nav-item" data-view="converter">Convert</button>
-          <button class="mobile-nav-item" data-view="picker">Pick</button>
+          <button class="mobile-nav-item" data-view="image-picker">Pick</button>
           <button class="mobile-nav-item" data-view="collection">Colors</button>
         </nav>
       `

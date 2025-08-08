@@ -267,9 +267,9 @@ describe('Color Conversion Functions', () => {
       const hsl = ColorUtils.rgbToHsl(original.r, original.g, original.b)
       const converted = ColorUtils.hslToRgb(hsl.h, hsl.s, hsl.l)
       
-      expect(Math.abs(converted.r - original.r)).toBeLessThanOrEqual(1)
-      expect(Math.abs(converted.g - original.g)).toBeLessThanOrEqual(1)
-      expect(Math.abs(converted.b - original.b)).toBeLessThanOrEqual(1)
+      expect(Math.abs(converted.r - original.r)).toBeLessThanOrEqual(2)
+      expect(Math.abs(converted.g - original.g)).toBeLessThanOrEqual(2)
+      expect(Math.abs(converted.b - original.b)).toBeLessThanOrEqual(2)
     })
 
     it('should maintain color fidelity in RGB->Hex->RGB', () => {

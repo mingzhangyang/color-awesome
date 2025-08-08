@@ -80,7 +80,7 @@ export class ColorCollection {
     this.loadData()
     
     container.innerHTML = `
-      <div class="space-y-8">
+      <div class="space-y-8 color-collection">
         <!-- Hero Section -->
         <div class="text-center">
           <h2 class="text-3xl font-bold text-gray-900 mb-4">My Color Collection</h2>
@@ -111,7 +111,7 @@ export class ColorCollection {
               <div class="flex-1 max-w-md">
                 <input type="text" 
                        id="search-input" 
-                       class="input-field" 
+                       class="input-field search-input" 
                        placeholder="Search colors or palettes...">
               </div>
               <div class="flex space-x-2">
@@ -140,7 +140,7 @@ export class ColorCollection {
               </div>
               
               <div class="flex space-x-2">
-                <button class="btn-secondary ${this.isDragMode ? 'bg-primary-100 border-primary-300' : ''}" id="toggle-drag-mode">
+                <button class="btn-secondary ${this.isDragMode ? 'bg-primary-100 border-primary-300' : ''} organize-mode-btn" id="toggle-drag-mode">
                   ${this.isDragMode ? '✅ Organizing' : '🔄 Organize'}
                 </button>
                 <select id="sort-options" class="input-field w-auto">
@@ -167,7 +167,7 @@ export class ColorCollection {
             </div>
             <h3 class="text-lg font-semibold text-gray-900 mb-2">No colors saved yet</h3>
             <p class="text-gray-600 mb-4">Start building your color collection by saving colors from the converter or image picker.</p>
-            <button class="btn-primary" onclick="document.querySelector('[data-view=converter]').click()">
+             <button class="btn-primary start-converting-btn">
               Start Converting Colors
             </button>
           </div>
@@ -207,11 +207,11 @@ export class ColorCollection {
       this.renderContent()
     })
 
-    // Filter buttons
-    document.querySelectorAll('.filter-btn').forEach(btn => {
+    // Filter buttons (scoped to container)
+    this.container.querySelectorAll('.filter-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         this.currentFilter = e.target.getAttribute('data-filter')
-        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'))
+        this.container.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'))
         e.target.classList.add('active')
         this.renderContent()
       })
@@ -256,6 +256,11 @@ export class ColorCollection {
       this.clearAll()
     })
 
+    // Start converting button (empty state)
+    this.container.querySelector('.start-converting-btn')?.addEventListener('click', () => {
+      document.querySelector('[data-view="converter"]').click()
+    })
+
     // Clear filters buttons (using event delegation since they're created dynamically)
     this.container.addEventListener('click', (e) => {
       if (e.target.id === 'clear-filters-btn' || e.target.id === 'clear-filters-palettes-btn') {
@@ -265,6 +270,9 @@ export class ColorCollection {
           this.searchQuery = ''
           this.renderContent()
         }
+      } else if (e.target.id === 'go-to-image-picker') {
+        // Navigate without inline onclick
+        document.querySelector('[data-view="image-picker"]').click()
       }
     })
   }
@@ -314,7 +322,7 @@ export class ColorCollection {
               </div>
               <h3 class="text-lg font-semibold text-gray-900 mb-2">No palettes saved yet</h3>
               <p class="text-gray-600 mb-4">Create color palettes by extracting colors from images.</p>
-              <button class="btn-primary" onclick="document.querySelector('[data-view=image-picker]').click()">
+            <button class="btn-primary" id="go-to-image-picker">
                 Pick Colors from Images
               </button>
             </div>
@@ -442,17 +450,17 @@ export class ColorCollection {
                ${this.isDragMode ? 'draggable="true"' : ''}>
             
             <!-- Favorite Star -->
-            <button class="absolute top-1 right-1 w-6 h-6 rounded-full bg-white bg-opacity-80 flex items-center justify-center text-xs z-10 hover:bg-opacity-100 transition-all ${color.isFavorite ? 'text-yellow-500' : 'text-gray-400'}"
-                    onclick="this.toggleFavorite('${color.id}')" title="${color.isFavorite ? 'Remove from favorites' : 'Add to favorites'}">
+            <button class="absolute top-1 right-1 w-6 h-6 rounded-full bg-white bg-opacity-80 flex items-center justify-center text-xs z-10 hover:bg-opacity-100 transition-all ${color.isFavorite ? 'text-yellow-500' : 'text-gray-400'} toggle-favorite-btn"
+                    data-id="${color.id}" title="${color.isFavorite ? 'Remove from favorites' : 'Add to favorites'}">
               ${color.isFavorite ? '⭐' : '☆'}
             </button>
             
             <!-- Color Square -->
-            <div class="aspect-square rounded-lg border-2 border-gray-200 cursor-pointer hover:border-gray-400 transition-all hover:scale-105"
+             <button class="aspect-square w-full rounded-lg border-2 border-gray-200 cursor-pointer hover:border-gray-400 transition-all hover:scale-105 color-swatch-btn"
                  style="background-color: ${color.hex}"
-                 onclick="navigator.clipboard.writeText('${color.hex}'); this.showToast('Copied ${color.hex}')"
+                 data-hex="${color.hex}"
                  title="Click to copy ${color.hex}">
-            </div>
+             </button>
             
             <!-- Color Info -->
             <div class="text-xs text-center mt-1 font-mono">${color.hex}</div>
@@ -470,16 +478,13 @@ export class ColorCollection {
             
             <!-- Actions Overlay -->
             <div class="absolute inset-0 bg-black bg-opacity-50 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-2">
-              <button class="w-8 h-8 bg-white rounded-full flex items-center justify-center text-sm hover:bg-gray-100"
-                      onclick="navigator.clipboard.writeText('${color.hex}'); this.showToast('Copied!')" title="Copy">
+               <button class="w-8 h-8 bg-white rounded-full flex items-center justify-center text-sm hover:bg-gray-100 copy-color-btn" data-hex="${color.hex}" title="Copy">
                 📋
               </button>
-              <button class="w-8 h-8 bg-white rounded-full flex items-center justify-center text-sm hover:bg-gray-100"
-                      onclick="this.editColorTags('${color.id}')" title="Edit Tags">
+               <button class="w-8 h-8 bg-white rounded-full flex items-center justify-center text-sm hover:bg-gray-100 edit-tags-btn" data-id="${color.id}" title="Edit Tags">
                 🏷️
               </button>
-              <button class="w-8 h-8 bg-white rounded-full flex items-center justify-center text-sm hover:bg-gray-100"
-                      onclick="this.deleteColor('${color.id}')" title="Delete">
+               <button class="w-8 h-8 bg-white rounded-full flex items-center justify-center text-sm hover:bg-gray-100 delete-color-btn" data-id="${color.id}" title="Delete">
                 🗑️
               </button>
             </div>
@@ -505,10 +510,10 @@ export class ColorCollection {
                 <p class="text-sm text-gray-600">${palette.colors.length} colors • ${new Date(palette.timestamp).toLocaleDateString()}</p>
               </div>
               <div class="flex space-x-2">
-                <button class="text-gray-400 hover:text-gray-600" onclick="this.copyPalette('${palette.id}')" title="Copy all colors">
+                <button class="text-gray-400 hover:text-gray-600 copy-palette-btn" data-id="${palette.id}" title="Copy all colors">
                   📋
                 </button>
-                <button class="text-gray-400 hover:text-red-600" onclick="this.deletePalette('${palette.id}')" title="Delete palette">
+                <button class="text-gray-400 hover:text-red-600 delete-palette-btn" data-id="${palette.id}" title="Delete palette">
                   🗑️
                 </button>
               </div>
@@ -527,16 +532,66 @@ export class ColorCollection {
         `).join('')}
       </div>
     `
+
+    // Wire up palette actions
+    container.querySelectorAll('.copy-palette-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation()
+        const id = btn.dataset.id
+        this.copyPalette(id)
+      })
+    })
+    container.querySelectorAll('.delete-palette-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation()
+        const id = btn.dataset.id
+        this.deletePalette(id)
+      })
+    })
   }
 
   setupColorActions() {
     // Add click to copy functionality
-    document.querySelectorAll('.color-item').forEach(item => {
-      const colorDiv = item.querySelector('div[style]')
-      colorDiv.addEventListener('click', () => {
-        const hex = item.getAttribute('data-color')
+    this.container.querySelectorAll('.color-swatch-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const hex = btn.dataset.hex
         navigator.clipboard.writeText(hex)
         this.showToast(`Copied ${hex}`)
+      })
+    })
+
+    // Actions overlay buttons
+    this.container.querySelectorAll('.copy-color-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation()
+        const hex = btn.dataset.hex
+        navigator.clipboard.writeText(hex)
+        this.showToast('Copied!')
+      })
+    })
+
+    this.container.querySelectorAll('.edit-tags-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation()
+        const id = btn.dataset.id
+        this.editColorTags(id)
+      })
+    })
+
+    this.container.querySelectorAll('.delete-color-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation()
+        const id = btn.dataset.id
+        this.deleteColor(id)
+      })
+    })
+
+    // Favorite star toggle
+    this.container.querySelectorAll('.toggle-favorite-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation()
+        const id = btn.dataset.id
+        this.toggleFavorite(id)
       })
     })
   }

@@ -35,9 +35,8 @@ Convert colors between 6 different formats: RGB, HEX, HSL, HSV, CMYK, and LAB.
 - **LAB**: `53, 80, 67` (lightness, a*, b*)
 
 ### Advanced Features
-- **Color Harmony**: Generate complementary and triadic colors
+- **Color Harmony**: Generate complementary, triadic, analogous, tetradic, and monochromatic colors
 - **Accessibility Check**: See contrast ratios and WCAG compliance
-- **Color Blindness Simulation**: Preview how colors appear to colorblind users
 - **Palette Generation**: Create harmonious color palettes
 
 ### Keyboard Shortcuts
@@ -52,7 +51,7 @@ Extract colors from images using advanced algorithms and tools.
 ### Image Upload
 1. **Drag & Drop**: Drag an image file onto the drop zone
 2. **File Browser**: Click "Choose File" to browse for images
-3. **Supported Formats**: JPG, PNG, GIF, WebP, SVG
+3. **Supported Formats**: PNG, JPG, JPEG (up to 10MB)
 
 ### Color Extraction Methods
 
@@ -63,8 +62,8 @@ Extract colors from images using advanced algorithms and tools.
 
 #### Dominant Colors
 - Extract the most prominent colors in the image
-- Uses advanced color clustering algorithms
-- Adjustable number of colors (1-10)
+- Uses clustering to group similar colors
+- Finds up to 8 dominant colors automatically
 
 #### Smart Palette Generation
 - Generate harmonious color palettes from images
@@ -77,10 +76,7 @@ Extract colors from images using advanced algorithms and tools.
 - Real-time color preview while hovering
 
 ### Image Tools
-- **Zoom**: Use zoom controls or mouse wheel
-  - Zoom In: `+` or mouse wheel up
-  - Zoom Out: `-` or mouse wheel down
-  - Reset: `0` or double-click
+- **Zoom**: Use on-screen controls (Zoom In, Zoom Out, Reset)
 - **Pan**: Click and drag to move around zoomed images
 
 ### Color Analysis
@@ -91,7 +87,7 @@ Extract colors from images using advanced algorithms and tools.
 
 ### Exporting
 - Save individual colors to your collection
-- Export color palettes as JSON, CSS, or ASE (Adobe Swatch Exchange)
+- Export colors and palettes as JSON from the Collection view
 - Copy hex codes directly to clipboard
 
 ## 🗂️ Color Collection
@@ -137,12 +133,8 @@ Organize and manage your saved colors with powerful tools.
 - **Auto-save**: All changes saved automatically to browser storage
 - **Export**: Download your collection as JSON
 - **Import**: Upload a previously exported collection
-- **Backup**: Regular automatic backups (retained for 7 days)
 
-### Usage Analytics
-- Track how often you use each color
-- See usage statistics and trends
-- Identify your most popular colors
+<!-- Usage analytics is not exposed in the UI; removed to reflect current implementation. -->
 
 ## ⌨️ Keyboard Shortcuts
 
@@ -174,7 +166,6 @@ Color Awesome is optimized for mobile devices with touch-friendly interfaces.
 ### Mobile Navigation
 - Bottom navigation bar for easy thumb access
 - Large touch targets (minimum 44px)
-- Swipe gestures for some actions
 
 ### Touch Interactions
 - **Tap**: Select colors and activate buttons
@@ -244,8 +235,8 @@ Color Awesome is designed to be accessible to all users.
 - Ensure you're not in incognito/private mode
 
 #### Image Upload Problems
-- Verify file format is supported (JPG, PNG, GIF, WebP)
-- Check file size (max 50MB recommended)
+- Verify file format is supported (PNG, JPG, JPEG)
+- Check file size (max 10MB recommended)
 - Try a different browser if issues persist
 
 #### Performance Issues

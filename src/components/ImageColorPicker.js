@@ -56,9 +56,9 @@ export class ImageColorPicker {
                 <p class="text-sm text-gray-600" id="cursor-info">Move mouse over image to see color preview</p>
               </div>
               <div class="flex space-x-2">
-                <button class="btn-secondary" id="toggle-eyedropper" title="Toggle Eyedropper Mode">
+                 <button class="btn-secondary eyedropper-btn" id="toggle-eyedropper" title="Toggle Eyedropper Mode">
                   🔍 Eyedropper
-                </button>
+                 </button>
                 <button class="btn-secondary" id="clear-image">Clear Image</button>
               </div>
             </div>
@@ -67,10 +67,10 @@ export class ImageColorPicker {
             <div class="flex justify-between items-center mb-4 p-3 bg-gray-50 rounded">
               <div class="flex items-center space-x-4">
                 <span class="text-sm font-medium">Zoom:</span>
-                <button class="btn-sm" id="zoom-out">−</button>
-                <span class="text-sm font-mono" id="zoom-level">100%</span>
-                <button class="btn-sm" id="zoom-in">+</button>
-                <button class="btn-sm" id="zoom-reset">Reset</button>
+                 <button class="btn-sm zoom-out-btn" id="zoom-out">−</button>
+                 <span class="text-sm font-mono zoom-level" id="zoom-level">100%</span>
+                 <button class="btn-sm zoom-in-btn" id="zoom-in">+</button>
+                 <button class="btn-sm zoom-reset-btn" id="zoom-reset">Reset</button>
               </div>
               
               <div class="flex items-center space-x-2">
@@ -91,7 +91,7 @@ export class ImageColorPicker {
 
         <!-- Extracted Colors -->
         <div id="extracted-colors-section" class="hidden">
-          <div class="card">
+           <div class="card image-picker">
             <div class="flex justify-between items-center mb-4">
               <h3 class="text-lg font-semibold">Extracted Colors</h3>
               <div class="space-x-2">
@@ -99,7 +99,7 @@ export class ImageColorPicker {
                 <button class="btn-primary" id="save-palette">Save Palette</button>
               </div>
             </div>
-            <div id="color-grid" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
+             <div id="color-grid" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4 dominant-colors">
               <!-- Colors will be inserted here -->
             </div>
           </div>
@@ -109,7 +109,7 @@ export class ImageColorPicker {
         <div class="card">
           <h3 class="text-lg font-semibold mb-4">Quick Actions</h3>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <button class="btn-secondary p-4 text-left" id="extract-dominant">
+            <button class="btn-secondary p-4 text-left extract-dominant-btn" id="extract-dominant">
               <div class="font-medium">Extract Dominant Colors</div>
               <div class="text-sm text-gray-600">Get the most prominent colors automatically</div>
             </button>
@@ -184,10 +184,14 @@ export class ImageColorPicker {
       }
     })
 
-    // Canvas click for color picking
-    document.addEventListener('click', (e) => {
-      if (e.target.id === 'image-canvas') {
-        this.pickColorFromCanvas(e)
+    // Canvas click for color picking (scoped)
+    this.container.addEventListener('click', (e) => {
+      if (e.target && e.target.id === 'image-canvas') {
+        try {
+          this.pickColorFromCanvas(e)
+        } catch (err) {
+          alert('Unable to read image pixels (CORS). Please download and upload the image instead.')
+        }
       }
     })
 
@@ -394,8 +398,10 @@ export class ImageColorPicker {
     if (!this.imageData) return
 
     const rect = this.canvas.getBoundingClientRect()
-    const x = Math.floor(event.clientX - rect.left)
-    const y = Math.floor(event.clientY - rect.top)
+    const scaleX = this.canvas.width / rect.width
+    const scaleY = this.canvas.height / rect.height
+    const x = Math.floor((event.clientX - rect.left) * scaleX / (this.zoomLevel || 1))
+    const y = Math.floor((event.clientY - rect.top) * scaleY / (this.zoomLevel || 1))
 
     // Get pixel data
     const pixelIndex = (y * this.imageData.width + x) * 4
@@ -451,20 +457,37 @@ export class ImageColorPicker {
       
       colorGrid.innerHTML = this.extractedColors.map(color => `
         <div class="group relative">
-          <div class="aspect-square rounded border-2 border-gray-200 cursor-pointer hover:border-gray-400 transition-colors"
-               style="background-color: ${color.hex}"
-               onclick="navigator.clipboard.writeText('${color.hex}'); this.showToast('Copied ${color.hex}')"
-               title="Click to copy ${color.hex}">
-          </div>
+          <button class="aspect-square w-full rounded border-2 border-gray-200 cursor-pointer hover:border-gray-400 transition-colors extracted-color-tile"
+                  style="background-color: ${color.hex}"
+                  title="Click to copy ${color.hex}"
+                  data-hex="${color.hex}">
+          </button>
           <div class="text-xs text-center mt-1 font-mono">${color.hex}</div>
           
           <!-- Remove button -->
-          <button class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                  onclick="this.removeExtractedColor('${color.id}')" title="Remove">
+          <button class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity remove-color-btn"
+                  data-id="${color.id}" title="Remove">
             ×
           </button>
         </div>
       `).join('')
+      
+      // Wire up tile copy and remove buttons
+      colorGrid.querySelectorAll('.extracted-color-tile').forEach(tile => {
+        tile.addEventListener('click', () => {
+          const hex = tile.dataset.hex
+          navigator.clipboard.writeText(hex)
+          this.showToast(`Copied ${hex}`)
+        })
+      })
+      
+      colorGrid.querySelectorAll('.remove-color-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation()
+          const id = btn.dataset.id
+          this.removeExtractedColor(id)
+        })
+      })
     } else {
       extractedSection.classList.add('hidden')
     }
@@ -703,11 +726,11 @@ export class ImageColorPicker {
 
   showColorAnalysis(analysis) {
     const analysisHtml = `
-      <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" id="analysis-modal">
+      <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" id="analysis-modal" role="dialog" aria-modal="true" aria-label="Color analysis results">
         <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
           <div class="flex justify-between items-center mb-4">
             <h3 class="text-lg font-semibold">Color Analysis Results</h3>
-            <button class="text-gray-400 hover:text-gray-600" onclick="this.getElement('analysis-modal').remove()">✕</button>
+            <button class="text-gray-400 hover:text-gray-600" id="close-analysis-modal" aria-label="Close">✕</button>
           </div>
           
           <div class="space-y-3">
@@ -744,7 +767,7 @@ export class ImageColorPicker {
             </div>
           </div>
           
-          <button class="btn-primary w-full mt-4" onclick="this.getElement('analysis-modal').remove()">
+          <button class="btn-primary w-full mt-4" id="close-analysis-modal-footer">
             Close
           </button>
         </div>
@@ -752,6 +775,9 @@ export class ImageColorPicker {
     `
     
     document.body.insertAdjacentHTML('beforeend', analysisHtml)
+    const modal = document.getElementById('analysis-modal')
+    modal.querySelector('#close-analysis-modal')?.addEventListener('click', () => modal.remove())
+    modal.querySelector('#close-analysis-modal-footer')?.addEventListener('click', () => modal.remove())
   }
 
   rgbToHsl(r, g, b) {

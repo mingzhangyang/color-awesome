@@ -14,7 +14,7 @@ export class KeyboardShortcuts {
   setupShortcuts() {
     // Navigation shortcuts
     this.shortcuts.set('1', () => this.app.switchView('converter'))
-    this.shortcuts.set('2', () => this.app.switchView('picker'))
+    this.shortcuts.set('2', () => this.app.switchView('image-picker'))
     this.shortcuts.set('3', () => this.app.switchView('collection'))
     
     // Utility shortcuts
@@ -93,7 +93,7 @@ export class KeyboardShortcuts {
               <span class="font-medium">Color Converter</span>
               <span class="text-gray-500 ml-2">Press 1</span>
             </div>
-            <div class="command-item p-2 hover:bg-gray-100 rounded cursor-pointer" data-action="picker">
+            <div class="command-item p-2 hover:bg-gray-100 rounded cursor-pointer" data-action="image-picker">
               <span class="font-medium">Image Color Picker</span>
               <span class="text-gray-500 ml-2">Press 2</span>
             </div>
