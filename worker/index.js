@@ -1,13 +1,16 @@
 /**
  * Color Awesome – Cloudflare Worker entry point
  *
- * This is a pure static SPA served via Cloudflare Workers Assets.
- * All static files in ./dist are served automatically by the runtime.
+ * Delegates all requests to the Workers Assets binding (env.ASSETS),
+ * which serves the files from ./dist and handles the SPA fallback.
  *
  * To add custom server-side logic (API routes, custom headers, etc.),
- * export a fetch handler here and handle requests before they fall
- * through to the asset servicing layer.
+ * intercept specific requests before the `env.ASSETS.fetch(request)` call.
  *
  * @see https://developers.cloudflare.com/workers/static-assets/
  */
-export default {}
+export default {
+    async fetch(request, env) {
+        return env.ASSETS.fetch(request)
+    }
+}
