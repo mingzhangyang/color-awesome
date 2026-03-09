@@ -39,3 +39,7 @@ temp/
 
 # OS generated files
 Thumbs.db
+
+# Wrangler
+.wrangler/
+.dev.vars

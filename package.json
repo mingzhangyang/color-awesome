@@ -5,8 +5,10 @@
   "main": "index.js",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && npm run prerender",
+    "build": "vite build",
     "preview": "vite preview",
+    "worker:dev": "wrangler dev",
+    "deploy": "npm run build && wrangler deploy",
     "prerender": "node scripts/prerender.mjs",
     "test": "vitest",
     "test:run": "vitest run",
@@ -33,6 +35,7 @@
   "license": "MIT",
   "devDependencies": {
     "@playwright/test": "^1.54.1",
+    "wrangler": "^3.0.0",
     "@vitest/coverage-v8": "^1.6.1",
     "@vitest/ui": "^1.0.0",
     "autoprefixer": "^10.4.0",
