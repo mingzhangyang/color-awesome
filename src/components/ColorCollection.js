@@ -10,6 +10,7 @@ export class ColorCollection {
     this.colorTags = new Map()
     this.container = null
     this.searchQuery = ''
+    this.selectedTag = ''
     this.selectedColorIds = new Set()
     this.isDragMode = false
     
@@ -20,6 +21,16 @@ export class ColorCollection {
   // Helper method to get elements within this container
   getElement(id) {
     return this.container ? this.container.querySelector(`#${id}`) : null
+  }
+
+  parseStoredArray(key) {
+    try {
+      const value = localStorage.getItem(key)
+      const parsed = value ? JSON.parse(value) : []
+      return Array.isArray(parsed) ? parsed : []
+    } catch {
+      return []
+    }
   }
 
   migrateDataIfNeeded() {
@@ -50,7 +61,7 @@ export class ColorCollection {
     // Migration from 1.0.0 to 1.3.0
     if (this.versionCompare(fromVersion, '1.3.0') < 0) {
       // Add missing properties to existing colors
-      const colors = JSON.parse(localStorage.getItem('savedColors') || '[]')
+      const colors = this.parseStoredArray('savedColors')
       const updatedColors = colors.map(color => ({
         ...color,
         tags: color.tags || [],
@@ -62,7 +73,7 @@ export class ColorCollection {
       localStorage.setItem('savedColors', JSON.stringify(updatedColors))
       
       // Add missing properties to existing palettes
-      const palettes = JSON.parse(localStorage.getItem('savedPalettes') || '[]')
+      const palettes = this.parseStoredArray('savedPalettes')
       const updatedPalettes = palettes.map(palette => ({
         ...palette,
         tags: palette.tags || [],
@@ -264,12 +275,21 @@ export class ColorCollection {
     // Clear filters buttons (using event delegation since they're created dynamically)
     this.container.addEventListener('click', (e) => {
       if (e.target.id === 'clear-filters-btn' || e.target.id === 'clear-filters-palettes-btn') {
+        this.searchQuery = ''
+        this.currentFilter = 'all'
+        this.selectedTag = ''
+
         const searchInput = this.getElement('search-input')
-        if (searchInput) {
-          searchInput.value = ''
-          this.searchQuery = ''
-          this.renderContent()
-        }
+        if (searchInput) searchInput.value = ''
+
+        const tagFilter = this.getElement('tag-filter')
+        if (tagFilter) tagFilter.value = ''
+
+        this.container.querySelectorAll('.filter-btn').forEach(btn => {
+          btn.classList.toggle('active', btn.getAttribute('data-filter') === 'all')
+        })
+
+        this.renderContent()
       } else if (e.target.id === 'go-to-image-picker') {
         // Navigate without inline onclick
         document.querySelector('[data-view="image-picker"]').click()
@@ -278,8 +298,8 @@ export class ColorCollection {
   }
 
   loadData() {
-    this.savedColors = JSON.parse(localStorage.getItem('savedColors') || '[]')
-    this.savedPalettes = JSON.parse(localStorage.getItem('savedPalettes') || '[]')
+    this.savedColors = this.parseStoredArray('savedColors')
+    this.savedPalettes = this.parseStoredArray('savedPalettes')
   }
 
   renderContent() {
@@ -499,10 +519,10 @@ export class ColorCollection {
     }
   }
 
-  renderPalettes(container) {
+  renderPalettes(container, palettes = this.savedPalettes) {
     container.innerHTML = `
       <div class="space-y-6" id="palettes-grid">
-        ${this.savedPalettes.map(palette => `
+        ${palettes.map(palette => `
           <div class="card palette-item" data-id="${palette.id}">
             <div class="flex justify-between items-start mb-4">
               <div>
@@ -521,11 +541,11 @@ export class ColorCollection {
             
             <div class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
               ${palette.colors.map(color => `
-                <div class="aspect-square rounded border-2 border-gray-200 cursor-pointer hover:border-gray-400 transition-colors"
+                <button class="aspect-square rounded border-2 border-gray-200 cursor-pointer hover:border-gray-400 transition-colors palette-color-tile"
                      style="background-color: ${color.hex}"
                      title="${color.hex}"
-                     onclick="navigator.clipboard.writeText('${color.hex}')">
-                </div>
+                     data-hex="${color.hex}">
+                </button>
               `).join('')}
             </div>
           </div>
@@ -546,6 +566,14 @@ export class ColorCollection {
         e.stopPropagation()
         const id = btn.dataset.id
         this.deletePalette(id)
+      })
+    })
+
+    container.querySelectorAll('.palette-color-tile').forEach(tile => {
+      tile.addEventListener('click', () => {
+        const hex = tile.dataset.hex
+        navigator.clipboard.writeText(hex)
+        this.showToast(`Copied ${hex}`)
       })
     })
   }
@@ -639,6 +667,33 @@ export class ColorCollection {
     }
   }
 
+  copyPalette(paletteId) {
+    const palette = this.savedPalettes.find(p => p.id.toString() === paletteId)
+    if (!palette || !Array.isArray(palette.colors)) return
+
+    const colors = palette.colors
+      .map(color => color?.hex)
+      .filter(Boolean)
+      .join(', ')
+
+    if (!colors) return
+
+    navigator.clipboard.writeText(colors)
+    palette.usageCount = (palette.usageCount || 0) + 1
+    palette.lastUsed = new Date().toISOString()
+    localStorage.setItem('savedPalettes', JSON.stringify(this.savedPalettes))
+    this.showToast('Palette copied!')
+  }
+
+  deletePalette(paletteId) {
+    if (!confirm('Are you sure you want to delete this palette?')) return
+
+    this.savedPalettes = this.savedPalettes.filter(p => p.id.toString() !== paletteId)
+    localStorage.setItem('savedPalettes', JSON.stringify(this.savedPalettes))
+    this.renderContent()
+    this.showToast('Palette deleted!')
+  }
+
   setupDragAndDrop() {
     const colorItems = document.querySelectorAll('.color-item')
     
@@ -724,7 +779,7 @@ export class ColorCollection {
               localStorage.setItem('savedPalettes', JSON.stringify(this.savedPalettes))
             }
             
-            this.render(document.getElementById('main-content'))
+            this.render(this.container)
             this.showToast('Data imported successfully!')
           } catch (error) {
             alert('Invalid file format!')

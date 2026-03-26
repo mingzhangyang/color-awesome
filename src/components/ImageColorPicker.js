@@ -5,6 +5,9 @@ export class ImageColorPicker {
     this.imageData = null
     this.extractedColors = []
     this.container = null
+    this.zoomLevel = 1
+    this.isEyedropperMode = false
+    this.interactionsSetup = false
   }
 
   // Helper method to get elements within this container
@@ -225,15 +228,15 @@ export class ImageColorPicker {
   }
 
   setupCanvasInteractions() {
+    if (this.interactionsSetup) return
+
     const canvas = this.getElement('image-canvas')
     const colorPreview = this.getElement('live-color-preview')
     const colorHex = this.getElement('live-color-hex')
     const pickerInfo = this.getElement('color-picker-info')
     const coordinates = this.getElement('picker-coordinates')
     const pickerColor = this.getElement('picker-color')
-    
-    this.zoomLevel = 1
-    this.isEyedropperMode = false
+    this.interactionsSetup = true
     
     // Zoom controls
     this.getElement('zoom-in')?.addEventListener('click', () => {
@@ -387,11 +390,6 @@ export class ImageColorPicker {
     this.extractedColors = []
     this.updateColorGrid()
     
-    // Setup enhanced interactions if not already done
-    if (!this.interactionsSetup) {
-      this.setupCanvasInteractions()
-      this.interactionsSetup = true
-    }
   }
 
   pickColorFromCanvas(event) {
@@ -402,6 +400,10 @@ export class ImageColorPicker {
     const scaleY = this.canvas.height / rect.height
     const x = Math.floor((event.clientX - rect.left) * scaleX / (this.zoomLevel || 1))
     const y = Math.floor((event.clientY - rect.top) * scaleY / (this.zoomLevel || 1))
+
+    if (x < 0 || x >= this.imageData.width || y < 0 || y >= this.imageData.height) {
+      return
+    }
 
     // Get pixel data
     const pixelIndex = (y * this.imageData.width + x) * 4
@@ -415,6 +417,9 @@ export class ImageColorPicker {
     // Add to extracted colors
     const colorData = {
       hex,
+      r,
+      g,
+      b,
       rgb: { r, g, b },
       position: { x, y },
       timestamp: new Date().toISOString(),

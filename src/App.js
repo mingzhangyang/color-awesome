@@ -14,9 +14,12 @@ export class App {
     this.appElement = document.getElementById('app')
     this.previousView = null
     this.isTransitioning = false
+    this.navigation = null
+    this.mobileNavigation = null
   }
 
   init() {
+    this.applyInitialViewFromLocation()
     this.initializeEnhancements()
     this.render()
     this.setupEventListeners()
@@ -148,8 +151,8 @@ export class App {
 
   initializeComponents() {
     // Initialize navigation
-    const navigation = new Navigation(this.currentView, (view) => this.switchView(view))
-    navigation.render()
+    this.navigation = new Navigation(this.currentView, (view) => this.switchView(view))
+    this.navigation.render()
     
     // Initialize mobile navigation
     this.mobileNavigation = new MobileNavigation(this.currentView, (view) => this.switchView(view))
@@ -256,6 +259,11 @@ export class App {
     if (this.mobileNavigation) {
       this.mobileNavigation.updateActiveView(view)
     }
+
+    // Update desktop navigation
+    if (this.navigation) {
+      this.navigation.updateActiveView(view)
+    }
     
     // Refresh ads on view change
     refreshAdsOnNavigation()
@@ -279,6 +287,7 @@ export class App {
         this.previousView = this.currentView
         this.currentView = e.state.view
         this.renderCurrentView()
+        this.syncNavigationState(e.state.view)
       }
     })
     
@@ -287,15 +296,12 @@ export class App {
       const hash = window.location.hash.slice(1)
       const validViews = ['converter', 'image-picker', 'collection']
       if (validViews.includes(hash) && hash !== this.currentView) {
-        this.switchView(hash)
+        this.previousView = this.currentView
+        this.currentView = hash
+        this.renderCurrentView()
+        this.syncNavigationState(hash)
       }
     })
-    
-    // Handle initial hash
-    const initialHash = window.location.hash.slice(1)
-    if (initialHash && ['converter', 'image-picker', 'collection'].includes(initialHash)) {
-      this.currentView = initialHash
-    }
     
     // Performance monitoring
     if ('performance' in window) {
@@ -323,6 +329,23 @@ export class App {
       }
       e.preventDefault()
     })
+  }
+
+  applyInitialViewFromLocation() {
+    const initialHash = window.location.hash.slice(1)
+    const validViews = ['converter', 'image-picker', 'collection']
+    if (validViews.includes(initialHash)) {
+      this.currentView = initialHash
+    }
+  }
+
+  syncNavigationState(view) {
+    if (this.mobileNavigation) {
+      this.mobileNavigation.updateActiveView(view)
+    }
+    if (this.navigation) {
+      this.navigation.updateActiveView(view)
+    }
   }
 
   // Cleanup method for when the app is destroyed

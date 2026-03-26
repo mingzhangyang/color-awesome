@@ -11,6 +11,16 @@ export class ColorConverter {
     return this.container ? this.container.querySelector(`#${id}`) : null
   }
 
+  parseStoredArray(key) {
+    try {
+      const value = localStorage.getItem(key)
+      const parsed = value ? JSON.parse(value) : []
+      return Array.isArray(parsed) ? parsed : []
+    } catch {
+      return []
+    }
+  }
+
   render(container) {
     this.container = container
     container.innerHTML = `
@@ -496,16 +506,7 @@ export class ColorConverter {
     const r = parseInt(this.getElement('rgb-r').value) || 0
     const g = parseInt(this.getElement('rgb-g').value) || 0
     const b = parseInt(this.getElement('rgb-b').value) || 0
-
-    this.currentColor = this.rgbToHex(r, g, b)
-    this.getElement('hex-input').value = this.currentColor
-
-    const hsl = this.rgbToHsl(r, g, b)
-    this.getElement('hsl-h').value = Math.round(hsl.h)
-    this.getElement('hsl-s').value = Math.round(hsl.s)
-    this.getElement('hsl-l').value = Math.round(hsl.l)
-
-    this.updateColorPreview()
+    this.updateAllFromRgb(r, g, b)
   }
 
   updateFromHSL() {
@@ -514,33 +515,7 @@ export class ColorConverter {
     const l = parseInt(this.getElement('hsl-l').value) || 0
 
     const rgb = this.hslToRgb(h / 360, s / 100, l / 100)
-    
-    this.getElement('rgb-r').value = rgb.r
-    this.getElement('rgb-g').value = rgb.g
-    this.getElement('rgb-b').value = rgb.b
-
-    this.currentColor = this.rgbToHex(rgb.r, rgb.g, rgb.b)
-    this.getElement('hex-input').value = this.currentColor
-
-    // Update other formats
-    const hsv = this.rgbToHsv(rgb.r, rgb.g, rgb.b)
-    const cmyk = this.rgbToCmyk(rgb.r, rgb.g, rgb.b)
-    const lab = this.rgbToLab(rgb.r, rgb.g, rgb.b)
-
-    this.getElement('hsv-h').value = Math.round(hsv.h)
-    this.getElement('hsv-s').value = Math.round(hsv.s)
-    this.getElement('hsv-v').value = Math.round(hsv.v)
-
-    this.getElement('cmyk-c').value = Math.round(cmyk.c)
-    this.getElement('cmyk-m').value = Math.round(cmyk.m)
-    this.getElement('cmyk-y').value = Math.round(cmyk.y)
-    this.getElement('cmyk-k').value = Math.round(cmyk.k)
-
-    this.getElement('lab-l').value = Math.round(lab.l)
-    this.getElement('lab-a').value = Math.round(lab.a)
-    this.getElement('lab-b').value = Math.round(lab.b)
-
-    this.updateColorPreview()
+    this.updateAllFromRgb(rgb.r, rgb.g, rgb.b)
   }
 
   updateFromHSV() {
@@ -614,6 +589,8 @@ export class ColorConverter {
     }
 
     this.updateColorPreview()
+    this.updateHarmonyColors()
+    this.updateAccessibilityInfo()
   }
 
   generateRandomColor() {
@@ -624,7 +601,7 @@ export class ColorConverter {
   }
 
   saveColor() {
-    const colors = JSON.parse(localStorage.getItem('savedColors') || '[]')
+    const colors = this.parseStoredArray('savedColors')
     const rgb = this.hexToRgb(this.currentColor)
     
     // Check if color already exists
@@ -873,7 +850,7 @@ export class ColorConverter {
         break
     }
 
-    const palettes = JSON.parse(localStorage.getItem('savedPalettes') || '[]')
+    const palettes = this.parseStoredArray('savedPalettes')
     const paletteData = {
       name: `${harmonyType.charAt(0).toUpperCase() + harmonyType.slice(1)} Harmony`,
       colors: harmonyColors.map(hex => ({
@@ -903,7 +880,8 @@ export class ColorConverter {
   }
 
   rgbToHex(r, g, b) {
-    return '#' + [r, g, b].map(x => {
+    return '#' + [r, g, b].map(value => {
+      const x = Math.max(0, Math.min(255, Math.round(value)))
       const hex = x.toString(16)
       return hex.length === 1 ? '0' + hex : hex
     }).join('')

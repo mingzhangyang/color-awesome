@@ -45,4 +45,17 @@ export class Navigation {
       })
     })
   }
+
+  updateActiveView(view) {
+    this.currentView = view
+    const navItems = document.querySelectorAll('.nav-item')
+    navItems.forEach(item => {
+      const isActive = item.getAttribute('data-view') === view
+      item.classList.toggle('bg-primary-100', isActive)
+      item.classList.toggle('text-primary-700', isActive)
+      item.classList.toggle('text-gray-600', !isActive)
+      item.classList.toggle('hover:text-gray-900', !isActive)
+      item.classList.toggle('hover:bg-gray-100', !isActive)
+    })
+  }
 }

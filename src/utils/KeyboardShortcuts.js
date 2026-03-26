@@ -229,9 +229,12 @@ export class KeyboardShortcuts {
       // Try to parse the pasted text as a color
       if (this.isValidColor(text)) {
         // Find color input and set the value
-        const colorInput = document.querySelector('input[type="color"], input[name*="color"]')
+        const colorInput = document.querySelector(
+          '#hex-input, input[type="color"], input[name*="color"]'
+        )
         if (colorInput) {
-          colorInput.value = text
+          const value = colorInput.id === 'hex-input' ? this.toHexColor(text) : text
+          colorInput.value = value
           colorInput.dispatchEvent(new Event('input', { bubbles: true }))
           this.showToast('Color pasted!')
         }
@@ -243,7 +246,9 @@ export class KeyboardShortcuts {
 
   saveCurrentColor() {
     // Trigger save action if available
-    const saveButton = document.querySelector('[data-action="save"], .save-color, button[onclick*="save"]')
+    const saveButton = document.querySelector(
+      '#save-color, .save-color-btn, [data-action="save"], .save-color, button[onclick*="save"]'
+    )
     if (saveButton) {
       saveButton.click()
     }
@@ -319,6 +324,30 @@ export class KeyboardShortcuts {
     const style = new Option().style
     style.color = color
     return style.color !== ''
+  }
+
+  toHexColor(color) {
+    const candidate = color.trim()
+    const shortHex = /^#([a-f\d]{3})$/i
+    const longHex = /^#([a-f\d]{6})$/i
+    if (longHex.test(candidate)) return candidate.toLowerCase()
+    if (shortHex.test(candidate)) {
+      const chars = candidate.slice(1).split('')
+      return `#${chars.map(char => char + char).join('')}`.toLowerCase()
+    }
+
+    const probe = document.createElement('div')
+    probe.style.color = candidate
+    probe.style.display = 'none'
+    document.body.appendChild(probe)
+    const resolved = getComputedStyle(probe).color
+    probe.remove()
+
+    const rgbMatch = resolved.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/i)
+    if (!rgbMatch) return candidate
+
+    const [r, g, b] = rgbMatch.slice(1).map(Number)
+    return `#${[r, g, b].map(value => value.toString(16).padStart(2, '0')).join('')}`
   }
 
   showToast(message, type = 'success') {
