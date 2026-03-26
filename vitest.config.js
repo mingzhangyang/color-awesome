@@ -30,13 +30,6 @@ export default defineConfig({
           statements: 80
         }
       }
-    },
-    // Mock browser APIs
-    pool: 'forks',
-    poolOptions: {
-      forks: {
-        singleFork: true
-      }
     }
   },
   resolve: {

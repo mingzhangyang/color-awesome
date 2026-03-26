@@ -79,10 +79,14 @@ global.matchMedia = vi.fn().mockImplementation(query => ({
   dispatchEvent: vi.fn()
 }))
 
-// Mock URL API
-global.URL = {
-  createObjectURL: vi.fn(() => 'mock-object-url'),
-  revokeObjectURL: vi.fn()
+// Preserve URL constructor and augment object URL helpers.
+if (typeof global.URL === 'function') {
+  if (!global.URL.createObjectURL) {
+    global.URL.createObjectURL = vi.fn(() => 'mock-object-url')
+  }
+  if (!global.URL.revokeObjectURL) {
+    global.URL.revokeObjectURL = vi.fn()
+  }
 }
 
 // Mock File API
