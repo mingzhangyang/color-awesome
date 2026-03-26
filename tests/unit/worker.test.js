@@ -48,7 +48,27 @@ describe('worker fetch handler', () => {
     expect(assetsFetch).toHaveBeenCalledTimes(2)
 
     const fallbackRequest = assetsFetch.mock.calls[1][0]
+    expect(fallbackRequest).toBe('https://color.orangely.xyz/index.html')
+  })
+
+  it('preserves HEAD method during SPA fallback', async () => {
+    const request = new Request('https://color.orangely.xyz/convert', { method: 'HEAD' })
+    const assetsFetch = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('asset lookup failed'))
+      .mockResolvedValueOnce(new Response(null, {
+        status: 200,
+        headers: { 'Content-Type': 'text/html' }
+      }))
+
+    const response = await worker.fetch(request, { ASSETS: { fetch: assetsFetch } })
+
+    expect(response.status).toBe(200)
+    expect(assetsFetch).toHaveBeenCalledTimes(2)
+
+    const fallbackRequest = assetsFetch.mock.calls[1][0]
     expect(fallbackRequest.url).toBe('https://color.orangely.xyz/index.html')
+    expect(fallbackRequest.method).toBe('HEAD')
   })
 
   it('returns 500 when non-html route fails and fallback is not applicable', async () => {

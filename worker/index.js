@@ -87,7 +87,9 @@ async function trySpaFallback(request, env) {
     if (!isHtmlLikeRoute(url.pathname)) return null
 
     const fallbackUrl = new URL('/index.html', url.origin)
-    const fallbackRequest = new Request(fallbackUrl.toString(), request)
+    const fallbackRequest = request.method === 'HEAD'
+        ? new Request(fallbackUrl.toString(), { method: 'HEAD' })
+        : fallbackUrl.toString()
     const fallbackResponse = await env.ASSETS.fetch(fallbackRequest)
     return withResponseHeaders(fallbackResponse, '/index.html', request.method)
 }
