@@ -1,19 +1,12 @@
 /**
  * Color Awesome Worker entry point.
  *
- * Serve static files from ASSETS and keep direct deep links
- * (`/convert?hex=...`) resilient by handling edge exceptions.
+ * Strategy:
+ * 1) Serve static assets via env.ASSETS.
+ * 2) For deep links, if asset lookup returns 404 for an HTML navigation,
+ *    fall back to /index.html.
+ * 3) Apply response headers without turning header decoration problems into 500s.
  */
-const HTML_ROUTE_PATHS = new Set([
-    '/',
-    '/convert',
-    '/hex-to-rgb',
-    '/contrast-checker',
-    '/image-picker',
-    '/collection',
-    '/palette'
-])
-
 const IMMUTABLE_ASSET_PATH_RE = /^\/assets\/.+-[A-Za-z0-9_-]{8,}\.(js|css|png|jpg|jpeg|svg|webp|avif|woff2?)$/
 
 function hasAssetsBinding(env) {
@@ -28,16 +21,21 @@ function applySecurityHeaders(headers) {
     headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload')
 }
 
-function isHtmlLikeRoute(pathname) {
-    return HTML_ROUTE_PATHS.has(pathname) || pathname.endsWith('.html')
-}
-
 function getCacheControl(pathname) {
     if (IMMUTABLE_ASSET_PATH_RE.test(pathname)) {
         return 'public, max-age=31536000, immutable'
     }
 
-    if (isHtmlLikeRoute(pathname)) {
+    if (
+        pathname === '/' ||
+        pathname === '/convert' ||
+        pathname === '/hex-to-rgb' ||
+        pathname === '/contrast-checker' ||
+        pathname === '/image-picker' ||
+        pathname === '/collection' ||
+        pathname === '/palette' ||
+        pathname.endsWith('.html')
+    ) {
         return 'public, max-age=0, must-revalidate'
     }
 
@@ -48,19 +46,45 @@ function getCacheControl(pathname) {
     return 'public, max-age=86400'
 }
 
+function shouldServeSpaFallback(request, response) {
+    if (!response || response.status !== 404) return false
+    if (request.method !== 'GET' && request.method !== 'HEAD') return false
+    const accept = request.headers.get('Accept') || ''
+    return accept.includes('text/html')
+}
+
+async function fetchSpaFallback(request, env) {
+    const url = new URL(request.url)
+    const indexUrl = new URL('/index.html', url.origin)
+    const indexRequest = new Request(indexUrl.toString(), {
+        method: request.method
+    })
+    return env.ASSETS.fetch(indexRequest)
+}
+
 function withResponseHeaders(response, pathname, method) {
-    const headers = new Headers(response?.headers)
+    const headers = new Headers(response.headers)
     applySecurityHeaders(headers)
 
     if (method === 'GET' || method === 'HEAD') {
         headers.set('Cache-Control', getCacheControl(pathname))
     }
 
-    return new Response(response.body, {
-        status: response.status,
-        statusText: response.statusText,
-        headers
-    })
+    try {
+        return new Response(response.body, {
+            status: response.status,
+            statusText: response.statusText,
+            headers
+        })
+    } catch (error) {
+        const message = error instanceof Error ? error.message : String(error)
+        console.error('Response header decoration failed, returning original response', {
+            pathname,
+            method,
+            message
+        })
+        return response
+    }
 }
 
 function createInternalErrorResponse() {
@@ -72,34 +96,21 @@ function createInternalErrorResponse() {
     return new Response('Internal Server Error', { status: 500, headers })
 }
 
-async function fetchAsset(request, env) {
-    if (!hasAssetsBinding(env)) {
-        throw new Error('Missing ASSETS binding')
-    }
-    return env.ASSETS.fetch(request)
-}
-
-async function trySpaFallback(request, env) {
-    if (!hasAssetsBinding(env)) return null
-    if (request.method !== 'GET' && request.method !== 'HEAD') return null
-
-    const url = new URL(request.url)
-    if (!isHtmlLikeRoute(url.pathname)) return null
-
-    const fallbackUrl = new URL('/index.html', url.origin)
-    const fallbackRequest = request.method === 'HEAD'
-        ? new Request(fallbackUrl.toString(), { method: 'HEAD' })
-        : fallbackUrl.toString()
-    const fallbackResponse = await env.ASSETS.fetch(fallbackRequest)
-    return withResponseHeaders(fallbackResponse, '/index.html', request.method)
-}
-
 export default {
     async fetch(request, env) {
+        if (!hasAssetsBinding(env)) {
+            return createInternalErrorResponse()
+        }
+
         const url = new URL(request.url)
 
         try {
-            const response = await fetchAsset(request, env)
+            let response = await env.ASSETS.fetch(request)
+
+            if (shouldServeSpaFallback(request, response)) {
+                response = await fetchSpaFallback(request, env)
+            }
+
             return withResponseHeaders(response, url.pathname, request.method)
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error)
@@ -109,16 +120,16 @@ export default {
                 message
             })
 
+            // Last attempt: fetch root index for HTML navigation
             try {
-                const fallbackResponse = await trySpaFallback(request, env)
-                if (fallbackResponse) return fallbackResponse
-            } catch (fallbackError) {
-                const fallbackMessage = fallbackError instanceof Error ? fallbackError.message : String(fallbackError)
-                console.error('Worker SPA fallback failed', {
-                    method: request.method,
-                    pathname: url.pathname,
-                    message: fallbackMessage
-                })
+                if (request.method === 'GET' || request.method === 'HEAD') {
+                    const rootUrl = new URL('/', url.origin)
+                    const rootRequest = new Request(rootUrl.toString(), { method: request.method })
+                    const rootResponse = await env.ASSETS.fetch(rootRequest)
+                    return withResponseHeaders(rootResponse, '/', request.method)
+                }
+            } catch {
+                // Ignore and return final 500 below.
             }
 
             return createInternalErrorResponse()

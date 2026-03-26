@@ -11,7 +11,9 @@ describe('worker fetch handler', () => {
   })
 
   it('serves deep-link requests with cache and security headers', async () => {
-    const request = new Request('https://color.orangely.xyz/convert?hex=%232c1e56')
+    const request = new Request('https://color.orangely.xyz/convert?hex=%232c1e56', {
+      headers: { Accept: 'text/html,application/xhtml+xml' }
+    })
     const env = {
       ASSETS: {
         fetch: vi.fn().mockResolvedValue(new Response('<html>ok</html>', {
@@ -31,11 +33,13 @@ describe('worker fetch handler', () => {
     expect(env.ASSETS.fetch).toHaveBeenCalledTimes(1)
   })
 
-  it('falls back to /index.html when deep-link asset fetch fails', async () => {
-    const request = new Request('https://color.orangely.xyz/convert?hex=%232c1e56')
+  it('falls back to /index.html on deep-link 404 for html navigation', async () => {
+    const request = new Request('https://color.orangely.xyz/convert?hex=%232c1e56', {
+      headers: { Accept: 'text/html,application/xhtml+xml' }
+    })
     const assetsFetch = vi
       .fn()
-      .mockRejectedValueOnce(new Error('asset lookup failed'))
+      .mockResolvedValueOnce(new Response('Not Found', { status: 404 }))
       .mockResolvedValueOnce(new Response('<html>index</html>', {
         status: 200,
         headers: { 'Content-Type': 'text/html' }
@@ -48,14 +52,18 @@ describe('worker fetch handler', () => {
     expect(assetsFetch).toHaveBeenCalledTimes(2)
 
     const fallbackRequest = assetsFetch.mock.calls[1][0]
-    expect(fallbackRequest).toBe('https://color.orangely.xyz/index.html')
+    expect(fallbackRequest.url).toBe('https://color.orangely.xyz/index.html')
+    expect(fallbackRequest.method).toBe('GET')
   })
 
   it('preserves HEAD method during SPA fallback', async () => {
-    const request = new Request('https://color.orangely.xyz/convert', { method: 'HEAD' })
+    const request = new Request('https://color.orangely.xyz/convert', {
+      method: 'HEAD',
+      headers: { Accept: 'text/html' }
+    })
     const assetsFetch = vi
       .fn()
-      .mockRejectedValueOnce(new Error('asset lookup failed'))
+      .mockResolvedValueOnce(new Response(null, { status: 404 }))
       .mockResolvedValueOnce(new Response(null, {
         status: 200,
         headers: { 'Content-Type': 'text/html' }
@@ -71,11 +79,28 @@ describe('worker fetch handler', () => {
     expect(fallbackRequest.method).toBe('HEAD')
   })
 
-  it('returns 500 when non-html route fails and fallback is not applicable', async () => {
+  it('returns 404 without SPA fallback for non-html accept headers', async () => {
+    const request = new Request('https://color.orangely.xyz/convert?hex=%232c1e56', {
+      headers: { Accept: 'application/json' }
+    })
+    const assetsFetch = vi
+      .fn()
+      .mockResolvedValueOnce(new Response('Not Found', { status: 404 }))
+
+    const response = await worker.fetch(request, { ASSETS: { fetch: assetsFetch } })
+
+    expect(response.status).toBe(404)
+    expect(assetsFetch).toHaveBeenCalledTimes(1)
+  })
+
+  it('returns 500 when asset fetch throws and root fallback also fails', async () => {
     const request = new Request('https://color.orangely.xyz/assets/main.js')
     const env = {
       ASSETS: {
-        fetch: vi.fn().mockRejectedValue(new Error('asset lookup failed'))
+        fetch: vi
+          .fn()
+          .mockRejectedValueOnce(new Error('asset lookup failed'))
+          .mockRejectedValueOnce(new Error('root lookup failed'))
       }
     }
 
