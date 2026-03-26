@@ -184,6 +184,12 @@
     @apply mt-6;
   }
 
+  .sidebar-bottom {
+    margin-top: auto;
+    padding-top: 1rem;
+    display: flex;
+  }
+
   .app-main-panel {
     @apply rounded-2xl border border-slate-200/80 bg-white/90 p-4 shadow-sm shadow-slate-200/50 sm:p-6 md:p-8;
     backdrop-filter: blur(4px);
@@ -742,6 +748,10 @@
 
   .app-shell.sidebar-collapsed .sidebar-toggle {
     padding-inline: 0.35rem;
+  }
+
+  .app-shell.sidebar-collapsed .sidebar-bottom {
+    justify-content: center;
   }
 
   .app-shell.sidebar-collapsed .sidebar-brand {

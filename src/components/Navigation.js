@@ -11,7 +11,7 @@ export class Navigation {
       {
         id: 'converter',
         label: 'Color Converter',
-        icon: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M13 4L6 11l7 7m5-14l-7 7 7 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+        icon: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M16 4l3 3-3 3M19 7H9a4 4 0 00-4 4v1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 20l-3-3 3-3M5 17h10a4 4 0 004-4v-1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`
       },
       {
         id: 'image-picker',

@@ -218,6 +218,11 @@ export class App {
                   <h1 class="sidebar-title">Color Awesome</h1>
                 </div>
               </div>
+            </div>
+
+            <p class="sidebar-summary">Fast tools for conversion, sampling, and saved palettes.</p>
+            <nav id="navigation" class="sidebar-nav" aria-label="Primary navigation"></nav>
+            <div class="sidebar-bottom">
               <button id="sidebar-toggle" class="sidebar-toggle" type="button" aria-label="Collapse sidebar">
                 <svg class="sidebar-toggle-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <path d="M14 7l-5 5 5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
@@ -225,9 +230,6 @@ export class App {
                 <span class="sidebar-toggle-text">Collapse</span>
               </button>
             </div>
-
-            <p class="sidebar-summary">Fast tools for conversion, sampling, and saved palettes.</p>
-            <nav id="navigation" class="sidebar-nav" aria-label="Primary navigation"></nav>
           </aside>
 
           <div class="app-content">
@@ -340,27 +342,11 @@ export class App {
       return
     }
 
-    newContent.classList.add('view-transition-incoming')
-    contentElement.appendChild(newContent)
-
+    contentElement.replaceChildren(newContent)
     if (this.uiEnhancements) {
-      this.uiEnhancements.transitionToView(
-        currentElement,
-        newContent,
-        this.getTransitionDirection()
-      ).then(() => {
-        currentElement.remove()
-        newContent.classList.remove('view-transition-incoming')
-        this.uiEnhancements.enhanceNewContent(newContent)
-      }).catch(() => {
-        contentElement.replaceChildren(newContent)
-      }).finally(() => {
-        this.finishViewTransition()
-      })
-    } else {
-      contentElement.replaceChildren(newContent)
-      this.finishViewTransition()
+      this.uiEnhancements.enhanceNewContent(newContent)
     }
+    this.finishViewTransition()
   }
 
   finishViewTransition() {
@@ -372,15 +358,6 @@ export class App {
       return
     }
     this.pendingView = null
-  }
-
-  getTransitionDirection() {
-    const viewOrder = ['converter', 'image-picker', 'collection']
-    const currentIndex = viewOrder.indexOf(this.currentView)
-    const previousIndex = viewOrder.indexOf(this.previousView)
-
-    if (previousIndex === -1) return 'left'
-    return currentIndex > previousIndex ? 'left' : 'right'
   }
 
   switchView(view) {
