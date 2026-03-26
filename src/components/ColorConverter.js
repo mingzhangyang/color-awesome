@@ -1,8 +1,12 @@
 import { AdComponent } from './AdComponent.js'
 
 export class ColorConverter {
-  constructor() {
-    this.currentColor = '#3b82f6'
+  constructor(options = {}) {
+    this.currentColor = this.normalizeHex(options.initialHex) || '#3b82f6'
+    this.contrastColor = this.normalizeHex(options.initialContrast) || '#ffffff'
+    this.focusSection = options.focusSection || ''
+    this.sharePath = options.sharePath || '/convert'
+    this.onStateChange = typeof options.onStateChange === 'function' ? options.onStateChange : null
     this.container = null
   }
 
@@ -138,6 +142,9 @@ export class ColorConverter {
           <button class="btn-secondary w-full sm:w-auto" id="random-color">
             Randomize
           </button>
+          <button class="btn-secondary w-full sm:w-auto" id="copy-share-link">
+            Copy Share Link
+          </button>
         </div>
 
         <!-- Accessibility & Validation -->
@@ -162,14 +169,14 @@ export class ColorConverter {
           </div>
 
           <!-- Accessibility Contrast -->
-          <div class="card">
+          <div class="card" id="contrast-checker-section">
             <h3 class="text-lg font-semibold mb-4">Accessibility Contrast</h3>
             <div class="space-y-3">
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Compare with:</label>
                 <div class="flex space-x-2">
-                  <input type="text" id="contrast-color" class="input-field flex-1 font-mono" placeholder="#ffffff" value="#ffffff">
-                  <div class="w-10 h-10 border-2 border-gray-200 rounded" id="contrast-preview" style="background-color: #ffffff"></div>
+                  <input type="text" id="contrast-color" class="input-field flex-1 font-mono" placeholder="#ffffff" value="${this.contrastColor}">
+                  <div class="w-10 h-10 border-2 border-gray-200 rounded" id="contrast-preview" style="background-color: ${this.contrastColor}"></div>
                 </div>
               </div>
               <div class="space-y-2">
@@ -390,6 +397,13 @@ export class ColorConverter {
       })
     }
 
+    const copyShareLinkBtn = getElement('copy-share-link')
+    if (copyShareLinkBtn) {
+      copyShareLinkBtn.addEventListener('click', () => {
+        this.copyShareLink()
+      })
+    }
+
     // Harmony controls
     const harmonyType = getElement('harmony-type')
     if (harmonyType) {
@@ -422,6 +436,7 @@ export class ColorConverter {
     if (contrastColor) {
       contrastColor.addEventListener('input', () => {
         this.updateAccessibilityInfo()
+        this.emitShareState()
       })
     }
   }
@@ -500,6 +515,7 @@ export class ColorConverter {
     this.updateColorPreview()
     this.updateHarmonyColors()
     this.updateAccessibilityInfo()
+    this.emitShareState()
   }
 
   updateFromRGB() {
@@ -591,6 +607,7 @@ export class ColorConverter {
     this.updateColorPreview()
     this.updateHarmonyColors()
     this.updateAccessibilityInfo()
+    this.emitShareState()
   }
 
   generateRandomColor() {
@@ -639,7 +656,12 @@ export class ColorConverter {
     this.updateColorValidation()
     
     // Update contrast info
-    const contrastColor = this.getElement('contrast-color').value || '#ffffff'
+    const contrastColorInput = this.getElement('contrast-color')
+    const contrastColor = this.normalizeHex(contrastColorInput?.value || '') || '#ffffff'
+    if (contrastColorInput && contrastColorInput.value !== contrastColor) {
+      contrastColorInput.value = contrastColor
+    }
+    this.contrastColor = contrastColor
     const contrastPreview = this.getElement('contrast-preview')
     contrastPreview.style.backgroundColor = contrastColor
     
@@ -891,9 +913,76 @@ export class ColorConverter {
     this.showToast('Harmony palette saved!')
   }
 
+  normalizeHex(value) {
+    if (!value || typeof value !== 'string') return null
+
+    let hex = value.trim().toLowerCase()
+    if (!hex.startsWith('#')) {
+      hex = `#${hex}`
+    }
+
+    if (/^#[0-9a-f]{3}$/.test(hex)) {
+      hex = `#${hex[1]}${hex[1]}${hex[2]}${hex[2]}${hex[3]}${hex[3]}`
+    }
+
+    return /^#[0-9a-f]{6}$/.test(hex) ? hex : null
+  }
+
+  buildShareUrl() {
+    const normalizedCurrent = this.normalizeHex(this.currentColor) || '#3b82f6'
+    const normalizedContrast = this.normalizeHex(this.getElement('contrast-color')?.value || this.contrastColor) || '#ffffff'
+    const params = new URLSearchParams()
+
+    if (normalizedCurrent !== '#3b82f6') {
+      params.set('hex', normalizedCurrent)
+    }
+
+    if (normalizedContrast !== '#ffffff') {
+      params.set('compare', normalizedContrast)
+    }
+
+    const query = params.toString()
+    const path = this.sharePath || '/convert'
+    return `${window.location.origin}${path}${query ? `?${query}` : ''}`
+  }
+
+  copyShareLink() {
+    const shareUrl = this.buildShareUrl()
+    navigator.clipboard.writeText(shareUrl)
+    this.showToast('Share link copied!')
+  }
+
+  emitShareState() {
+    if (!this.onStateChange) return
+
+    const hex = this.normalizeHex(this.currentColor)
+    const contrast = this.normalizeHex(this.getElement('contrast-color')?.value || this.contrastColor) || '#ffffff'
+    if (!hex) return
+
+    this.onStateChange({
+      hex,
+      contrast,
+      sharePath: this.sharePath
+    })
+  }
+
+  scrollToFocusSection() {
+    if (this.focusSection !== 'contrast') return
+
+    const contrastSection = this.getElement('contrast-checker-section')
+    if (!contrastSection) return
+
+    contrastSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
   // Color conversion utilities
   hexToRgb(hex) {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+    const normalized = this.normalizeHex(hex || '')
+    if (!normalized) {
+      return { r: 0, g: 0, b: 0 }
+    }
+
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(normalized)
     return result ? {
       r: parseInt(result[1], 16),
       g: parseInt(result[2], 16),
@@ -1138,6 +1227,8 @@ export class ColorConverter {
         this.updateColorValues()
         this.updateHarmonyColors()
         this.updateAccessibilityInfo()
+        this.emitShareState()
+        this.scrollToFocusSection()
         return true
       }
       return false

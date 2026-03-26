@@ -1,5 +1,5 @@
 export class ColorCollection {
-  constructor() {
+  constructor(options = {}) {
     this.savedColors = []
     this.savedPalettes = []
     this.currentView = 'colors' // 'colors' or 'palettes'
@@ -13,6 +13,7 @@ export class ColorCollection {
     this.selectedTag = ''
     this.selectedColorIds = new Set()
     this.isDragMode = false
+    this.sharedPalette = options.sharedPalette || null
     
     // Initialize data migration
     this.migrateDataIfNeeded()
@@ -100,6 +101,8 @@ export class ColorCollection {
           </p>
         </div>
 
+        ${this.renderSharedPaletteBanner()}
+
         <!-- View Toggle -->
         <div class="flex justify-center">
           <div class="bg-gray-100 p-1 rounded-lg flex flex-wrap justify-center gap-1">
@@ -125,7 +128,12 @@ export class ColorCollection {
                        class="input-field search-input" 
                        placeholder="Search colors or palettes...">
               </div>
-              <div class="flex flex-wrap justify-center gap-2 w-full sm:w-auto">
+              <div class="flex flex-wrap justify-center gap-2 w-full sm:w-auto items-center">
+                <select id="export-format" class="input-field w-auto">
+                  <option value="json">JSON</option>
+                  <option value="gpl">GPL</option>
+                  <option value="css">CSS Variables</option>
+                </select>
                 <button class="btn-secondary flex-1 sm:flex-none" id="import-data">Import</button>
                 <button class="btn-secondary flex-1 sm:flex-none" id="export-data">Export</button>
                 <button class="btn-primary flex-1 sm:flex-none" id="clear-all">Clear All</button>
@@ -188,6 +196,40 @@ export class ColorCollection {
 
     this.setupEventListeners()
     this.renderContent()
+  }
+
+  renderSharedPaletteBanner() {
+    if (!this.sharedPalette || !Array.isArray(this.sharedPalette.hexes) || this.sharedPalette.hexes.length === 0) {
+      return ''
+    }
+
+    const safeName = this.escapeHtml(this.sharedPalette.name || 'Shared Palette')
+    const swatches = this.sharedPalette.hexes.slice(0, 12)
+    const extraCount = this.sharedPalette.hexes.length - swatches.length
+
+    return `
+      <div class="card border border-primary-200 bg-primary-50/40">
+        <div class="flex flex-col gap-3">
+          <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+            <div>
+              <p class="text-xs uppercase tracking-wide text-primary-700 font-semibold">Shared Palette Link</p>
+              <h3 class="text-lg font-semibold text-gray-900">${safeName}</h3>
+              <p class="text-sm text-gray-600">${this.sharedPalette.hexes.length} color${this.sharedPalette.hexes.length === 1 ? '' : 's'} ready to import.</p>
+            </div>
+            <div class="flex gap-2">
+              <button class="btn-primary" id="import-shared-palette">Import Palette</button>
+              <button class="btn-secondary" id="dismiss-shared-palette">Dismiss</button>
+            </div>
+          </div>
+          <div class="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-12 gap-2">
+            ${swatches.map((hex) => `
+              <div class="h-8 rounded border border-gray-200" style="background-color: ${hex}" title="${hex}"></div>
+            `).join('')}
+            ${extraCount > 0 ? `<div class="h-8 rounded border border-dashed border-gray-300 text-xs flex items-center justify-center text-gray-600">+${extraCount}</div>` : ''}
+          </div>
+        </div>
+      </div>
+    `
   }
 
   setupEventListeners() {
@@ -265,6 +307,15 @@ export class ColorCollection {
 
     this.getElement('clear-all').addEventListener('click', () => {
       this.clearAll()
+    })
+
+    this.getElement('import-shared-palette')?.addEventListener('click', () => {
+      this.importSharedPalette()
+    })
+
+    this.getElement('dismiss-shared-palette')?.addEventListener('click', () => {
+      this.sharedPalette = null
+      this.render(this.container)
     })
 
     // Start converting button (empty state)
@@ -530,6 +581,9 @@ export class ColorCollection {
                 <p class="text-sm text-gray-600">${palette.colors.length} colors • ${new Date(palette.timestamp).toLocaleDateString()}</p>
               </div>
               <div class="flex space-x-2">
+                <button class="text-gray-400 hover:text-primary-600 share-palette-btn" data-id="${palette.id}" title="Share palette link">
+                  🔗
+                </button>
                 <button class="text-gray-400 hover:text-gray-600 copy-palette-btn" data-id="${palette.id}" title="Copy all colors">
                   📋
                 </button>
@@ -559,6 +613,13 @@ export class ColorCollection {
         e.stopPropagation()
         const id = btn.dataset.id
         this.copyPalette(id)
+      })
+    })
+    container.querySelectorAll('.share-palette-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation()
+        const id = btn.dataset.id
+        this.sharePalette(id)
       })
     })
     container.querySelectorAll('.delete-palette-btn').forEach(btn => {
@@ -685,6 +746,92 @@ export class ColorCollection {
     this.showToast('Palette copied!')
   }
 
+  sharePalette(paletteId) {
+    const palette = this.savedPalettes.find(p => p.id.toString() === paletteId)
+    if (!palette || !Array.isArray(palette.colors) || palette.colors.length === 0) return
+
+    const colors = palette.colors
+      .map((color) => this.normalizeHex(color?.hex))
+      .filter(Boolean)
+
+    if (colors.length === 0) return
+
+    const params = new URLSearchParams({
+      name: palette.name || 'Shared Palette',
+      colors: colors.join(',')
+    })
+
+    const shareUrl = `${window.location.origin}/palette?${params.toString()}`
+    navigator.clipboard.writeText(shareUrl)
+    this.showToast('Palette link copied!')
+  }
+
+  importSharedPalette() {
+    if (!this.sharedPalette || !Array.isArray(this.sharedPalette.hexes) || this.sharedPalette.hexes.length === 0) {
+      return
+    }
+
+    const paletteColors = this.sharedPalette.hexes
+      .map((hex) => this.normalizeHex(hex))
+      .filter(Boolean)
+      .map((hex) => ({
+        hex,
+        rgb: this.hexToRgb(hex),
+        timestamp: new Date().toISOString(),
+        id: Date.now() + Math.random()
+      }))
+
+    if (paletteColors.length === 0) return
+
+    const paletteData = {
+      name: this.sharedPalette.name || 'Shared Palette',
+      colors: paletteColors,
+      timestamp: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      id: Date.now(),
+      tags: ['shared-link'],
+      isFavorite: false
+    }
+
+    const alreadyExists = this.savedPalettes.some((palette) => {
+      const existingHexes = (palette.colors || [])
+        .map((color) => this.normalizeHex(color?.hex))
+        .filter(Boolean)
+      return existingHexes.length === paletteColors.length &&
+        existingHexes.every((hex, index) => hex === paletteColors[index].hex)
+    })
+
+    if (!alreadyExists) {
+      this.savedPalettes.push(paletteData)
+      localStorage.setItem('savedPalettes', JSON.stringify(this.savedPalettes))
+    }
+
+    const existingColorSet = new Set(this.savedColors.map((color) => this.normalizeHex(color.hex)).filter(Boolean))
+    paletteColors.forEach((color) => {
+      if (existingColorSet.has(color.hex)) return
+      this.savedColors.push({
+        hex: color.hex,
+        r: color.rgb.r,
+        g: color.rgb.g,
+        b: color.rgb.b,
+        timestamp: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        lastUsed: new Date().toISOString(),
+        id: Date.now() + Math.random(),
+        tags: ['shared-link'],
+        isFavorite: false,
+        usageCount: 0
+      })
+      existingColorSet.add(color.hex)
+    })
+
+    localStorage.setItem('savedColors', JSON.stringify(this.savedColors))
+
+    this.sharedPalette = null
+    this.render(this.container)
+    this.showToast('Shared palette imported!')
+  }
+
   deletePalette(paletteId) {
     if (!confirm('Are you sure you want to delete this palette?')) return
 
@@ -744,6 +891,52 @@ export class ColorCollection {
     }
   }
 
+  normalizeHex(value) {
+    if (!value || typeof value !== 'string') return null
+
+    let hex = value.trim().toLowerCase()
+    if (!hex.startsWith('#')) {
+      hex = `#${hex}`
+    }
+
+    if (/^#[0-9a-f]{3}$/.test(hex)) {
+      hex = `#${hex[1]}${hex[1]}${hex[2]}${hex[2]}${hex[3]}${hex[3]}`
+    }
+
+    return /^#[0-9a-f]{6}$/.test(hex) ? hex : null
+  }
+
+  hexToRgb(hex) {
+    const normalized = this.normalizeHex(hex)
+    if (!normalized) return { r: 0, g: 0, b: 0 }
+
+    const match = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(normalized)
+    if (!match) return { r: 0, g: 0, b: 0 }
+
+    return {
+      r: parseInt(match[1], 16),
+      g: parseInt(match[2], 16),
+      b: parseInt(match[3], 16)
+    }
+  }
+
+  rgbToHex(r, g, b) {
+    return '#' + [r, g, b].map((value) => {
+      const safe = Math.max(0, Math.min(255, Math.round(value)))
+      const hex = safe.toString(16)
+      return hex.length === 1 ? `0${hex}` : hex
+    }).join('')
+  }
+
+  escapeHtml(value) {
+    return String(value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;')
+  }
+
   showToast(message) {
     const toast = document.createElement('div')
     toast.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-slide-up'
@@ -759,7 +952,7 @@ export class ColorCollection {
   importData() {
     const input = document.createElement('input')
     input.type = 'file'
-    input.accept = '.json'
+    input.accept = '.json,.gpl,.css,.txt'
     
     input.onchange = (e) => {
       const file = e.target.files[0]
@@ -767,22 +960,12 @@ export class ColorCollection {
         const reader = new FileReader()
         reader.onload = (event) => {
           try {
-            const data = JSON.parse(event.target.result)
-            
-            if (data.colors) {
-              this.savedColors = [...this.savedColors, ...data.colors]
-              localStorage.setItem('savedColors', JSON.stringify(this.savedColors))
-            }
-            
-            if (data.palettes) {
-              this.savedPalettes = [...this.savedPalettes, ...data.palettes]
-              localStorage.setItem('savedPalettes', JSON.stringify(this.savedPalettes))
-            }
-            
+            const imported = this.parseImportFile(file.name, String(event.target.result || ''))
+            const added = this.mergeImportedData(imported)
             this.render(this.container)
-            this.showToast('Data imported successfully!')
-          } catch (error) {
-            alert('Invalid file format!')
+            this.showToast(`Imported ${added.colors} colors and ${added.palettes} palettes!`)
+          } catch {
+            alert('Unsupported or invalid import file format.')
           }
         }
         reader.readAsText(file)
@@ -793,22 +976,421 @@ export class ColorCollection {
   }
 
   exportData() {
-    const data = {
-      colors: this.savedColors,
-      palettes: this.savedPalettes,
-      exportDate: new Date().toISOString()
+    const format = this.getElement('export-format')?.value || 'json'
+    const dateSuffix = new Date().toISOString().split('T')[0]
+
+    if (format === 'json') {
+      const data = {
+        colors: this.savedColors,
+        palettes: this.savedPalettes,
+        exportDate: new Date().toISOString()
+      }
+      this.downloadTextFile(
+        `color-awesome-export-${dateSuffix}.json`,
+        JSON.stringify(data, null, 2),
+        'application/json'
+      )
+      this.showToast('JSON export completed!')
+      return
     }
 
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+    const exportHexes = this.getExportHexes()
+    if (exportHexes.length === 0) {
+      this.showToast('Nothing to export yet.')
+      return
+    }
+
+    if (format === 'gpl') {
+      const content = this.buildGplContent(exportHexes)
+      this.downloadTextFile(
+        `color-awesome-palette-${dateSuffix}.gpl`,
+        content,
+        'text/plain'
+      )
+      this.showToast('GPL export completed!')
+      return
+    }
+
+    if (format === 'css') {
+      const content = this.buildCssVariablesContent(exportHexes)
+      this.downloadTextFile(
+        `color-awesome-palette-${dateSuffix}.css`,
+        content,
+        'text/css'
+      )
+      this.showToast('CSS variables export completed!')
+    }
+  }
+
+  parseImportFile(fileName, content) {
+    const lowerName = fileName.toLowerCase()
+
+    if (lowerName.endsWith('.json')) {
+      return this.parseJsonImport(content)
+    }
+
+    if (lowerName.endsWith('.gpl')) {
+      return this.parseGplImport(content)
+    }
+
+    if (lowerName.endsWith('.css')) {
+      return this.parseCssImport(content)
+    }
+
+    if (lowerName.endsWith('.txt')) {
+      if (content.includes('GIMP Palette')) {
+        return this.parseGplImport(content)
+      }
+      return this.parseCssImport(content)
+    }
+
+    try {
+      return this.parseJsonImport(content)
+    } catch {
+      try {
+        return this.parseGplImport(content)
+      } catch {
+        return this.parseCssImport(content)
+      }
+    }
+  }
+
+  parseJsonImport(content) {
+    const parsed = JSON.parse(content)
+    const imported = { colors: [], palettes: [] }
+
+    if (Array.isArray(parsed)) {
+      parsed.forEach((entry) => {
+        const color = this.sanitizeImportedColor(entry)
+        if (color) imported.colors.push(color)
+      })
+      return imported
+    }
+
+    if (Array.isArray(parsed.colors)) {
+      parsed.colors.forEach((entry) => {
+        const color = this.sanitizeImportedColor(entry)
+        if (color) imported.colors.push(color)
+      })
+    }
+
+    if (Array.isArray(parsed.palettes)) {
+      parsed.palettes.forEach((entry) => {
+        const palette = this.sanitizeImportedPalette(entry)
+        if (palette) imported.palettes.push(palette)
+      })
+    }
+
+    if (imported.colors.length === 0 && imported.palettes.length === 0) {
+      throw new Error('No importable colors found')
+    }
+
+    return imported
+  }
+
+  parseGplImport(content) {
+    const lines = content.split(/\r?\n/)
+    let paletteName = 'Imported GPL Palette'
+    const colors = []
+
+    lines.forEach((line) => {
+      const trimmed = line.trim()
+      if (trimmed.startsWith('Name:')) {
+        paletteName = trimmed.replace('Name:', '').trim() || paletteName
+        return
+      }
+
+      const match = trimmed.match(/^(\d{1,3})\s+(\d{1,3})\s+(\d{1,3})(?:\s+(.+))?$/)
+      if (!match) return
+
+      const r = Math.max(0, Math.min(255, Number(match[1])))
+      const g = Math.max(0, Math.min(255, Number(match[2])))
+      const b = Math.max(0, Math.min(255, Number(match[3])))
+      const hex = this.rgbToHex(r, g, b)
+      colors.push(this.createPaletteColor(hex))
+    })
+
+    if (colors.length === 0) {
+      throw new Error('No colors found in GPL file')
+    }
+
+    return {
+      colors: colors.map((color) => ({
+        hex: color.hex,
+        r: color.rgb.r,
+        g: color.rgb.g,
+        b: color.rgb.b,
+        timestamp: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        lastUsed: new Date().toISOString(),
+        id: Date.now() + Math.random(),
+        tags: [],
+        isFavorite: false,
+        usageCount: 0
+      })),
+      palettes: [
+        {
+          id: Date.now() + Math.random(),
+          name: paletteName,
+          colors,
+          timestamp: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+          tags: ['imported-gpl'],
+          isFavorite: false,
+          usageCount: 0
+        }
+      ]
+    }
+  }
+
+  parseCssImport(content) {
+    const matches = content.match(/#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})\b/g) || []
+    const unique = [...new Set(matches.map((match) => this.normalizeHex(match)).filter(Boolean))]
+
+    if (unique.length === 0) {
+      throw new Error('No HEX colors found in CSS')
+    }
+
+    const paletteColors = unique.map((hex) => this.createPaletteColor(hex))
+
+    return {
+      colors: paletteColors.map((color) => ({
+        hex: color.hex,
+        r: color.rgb.r,
+        g: color.rgb.g,
+        b: color.rgb.b,
+        timestamp: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        lastUsed: new Date().toISOString(),
+        id: Date.now() + Math.random(),
+        tags: [],
+        isFavorite: false,
+        usageCount: 0
+      })),
+      palettes: [
+        {
+          id: Date.now() + Math.random(),
+          name: 'Imported CSS Palette',
+          colors: paletteColors,
+          timestamp: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+          tags: ['imported-css'],
+          isFavorite: false,
+          usageCount: 0
+        }
+      ]
+    }
+  }
+
+  sanitizeImportedColor(entry) {
+    if (typeof entry === 'string') {
+      const normalized = this.normalizeHex(entry)
+      if (!normalized) return null
+      const rgb = this.hexToRgb(normalized)
+      return {
+        hex: normalized,
+        r: rgb.r,
+        g: rgb.g,
+        b: rgb.b,
+        timestamp: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        lastUsed: new Date().toISOString(),
+        id: Date.now() + Math.random(),
+        tags: [],
+        isFavorite: false,
+        usageCount: 0
+      }
+    }
+
+    if (!entry || typeof entry !== 'object') return null
+    const normalized = this.normalizeHex(entry.hex)
+    if (!normalized) return null
+
+    const rgb = this.hexToRgb(normalized)
+    return {
+      ...entry,
+      hex: normalized,
+      r: Number.isFinite(entry.r) ? entry.r : rgb.r,
+      g: Number.isFinite(entry.g) ? entry.g : rgb.g,
+      b: Number.isFinite(entry.b) ? entry.b : rgb.b,
+      id: entry.id || Date.now() + Math.random(),
+      timestamp: entry.timestamp || new Date().toISOString(),
+      createdAt: entry.createdAt || entry.timestamp || new Date().toISOString(),
+      lastUsed: entry.lastUsed || entry.timestamp || new Date().toISOString(),
+      tags: Array.isArray(entry.tags) ? entry.tags : [],
+      isFavorite: Boolean(entry.isFavorite),
+      usageCount: Number.isFinite(entry.usageCount) ? entry.usageCount : 0
+    }
+  }
+
+  sanitizeImportedPalette(entry) {
+    if (!entry || typeof entry !== 'object' || !Array.isArray(entry.colors)) return null
+
+    const colors = entry.colors
+      .map((color) => {
+        if (typeof color === 'string') {
+          const normalized = this.normalizeHex(color)
+          return normalized ? this.createPaletteColor(normalized) : null
+        }
+        const normalized = this.normalizeHex(color?.hex)
+        if (!normalized) return null
+        return {
+          ...color,
+          hex: normalized,
+          rgb: color.rgb || this.hexToRgb(normalized),
+          id: color.id || Date.now() + Math.random(),
+          timestamp: color.timestamp || new Date().toISOString()
+        }
+      })
+      .filter(Boolean)
+
+    if (colors.length === 0) return null
+
+    return {
+      ...entry,
+      id: entry.id || Date.now() + Math.random(),
+      name: (entry.name || 'Imported Palette').toString().slice(0, 80),
+      colors,
+      timestamp: entry.timestamp || new Date().toISOString(),
+      createdAt: entry.createdAt || entry.timestamp || new Date().toISOString(),
+      tags: Array.isArray(entry.tags) ? entry.tags : [],
+      isFavorite: Boolean(entry.isFavorite),
+      usageCount: Number.isFinite(entry.usageCount) ? entry.usageCount : 0
+    }
+  }
+
+  createPaletteColor(hex) {
+    const normalized = this.normalizeHex(hex)
+    const rgb = this.hexToRgb(normalized)
+    return {
+      hex: normalized,
+      rgb,
+      timestamp: new Date().toISOString(),
+      id: Date.now() + Math.random()
+    }
+  }
+
+  mergeImportedData(imported) {
+    let addedColors = 0
+    let addedPalettes = 0
+
+    const existingColorHexes = new Set(
+      this.savedColors
+        .map((color) => this.normalizeHex(color.hex))
+        .filter(Boolean)
+    )
+
+    imported.colors.forEach((color) => {
+      const sanitized = this.sanitizeImportedColor(color)
+      if (!sanitized || existingColorHexes.has(sanitized.hex)) return
+      this.savedColors.push(sanitized)
+      existingColorHexes.add(sanitized.hex)
+      addedColors += 1
+    })
+
+    const paletteSignatures = new Set(this.savedPalettes.map((palette) => this.getPaletteSignature(palette)))
+    imported.palettes.forEach((palette) => {
+      const sanitized = this.sanitizeImportedPalette(palette)
+      if (!sanitized) return
+
+      const signature = this.getPaletteSignature(sanitized)
+      if (paletteSignatures.has(signature)) return
+
+      this.savedPalettes.push(sanitized)
+      paletteSignatures.add(signature)
+      addedPalettes += 1
+
+      sanitized.colors.forEach((color) => {
+        const normalized = this.normalizeHex(color.hex)
+        if (!normalized || existingColorHexes.has(normalized)) return
+        const rgb = this.hexToRgb(normalized)
+        this.savedColors.push({
+          hex: normalized,
+          r: rgb.r,
+          g: rgb.g,
+          b: rgb.b,
+          timestamp: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+          lastUsed: new Date().toISOString(),
+          id: Date.now() + Math.random(),
+          tags: [],
+          isFavorite: false,
+          usageCount: 0
+        })
+        existingColorHexes.add(normalized)
+        addedColors += 1
+      })
+    })
+
+    localStorage.setItem('savedColors', JSON.stringify(this.savedColors))
+    localStorage.setItem('savedPalettes', JSON.stringify(this.savedPalettes))
+
+    return { colors: addedColors, palettes: addedPalettes }
+  }
+
+  getPaletteSignature(palette) {
+    const name = (palette.name || '').trim().toLowerCase()
+    const colorSignature = (palette.colors || [])
+      .map((color) => this.normalizeHex(color?.hex))
+      .filter(Boolean)
+      .join(',')
+    return `${name}:${colorSignature}`
+  }
+
+  getExportHexes() {
+    const sourceHexes = this.currentView === 'palettes'
+      ? this.savedPalettes.flatMap((palette) =>
+          (palette.colors || [])
+            .map((color) => this.normalizeHex(color?.hex))
+            .filter(Boolean)
+        )
+      : this.savedColors
+          .map((color) => this.normalizeHex(color.hex))
+          .filter(Boolean)
+
+    return [...new Set(sourceHexes)]
+  }
+
+  buildGplContent(hexes) {
+    const lines = [
+      'GIMP Palette',
+      `Name: Color Awesome ${this.currentView === 'palettes' ? 'Palettes' : 'Colors'}`,
+      'Columns: 8',
+      '#'
+    ]
+
+    hexes.forEach((hex) => {
+      const rgb = this.hexToRgb(hex)
+      lines.push(`${rgb.r} ${rgb.g} ${rgb.b} ${hex}`)
+    })
+
+    return lines.join('\n')
+  }
+
+  buildCssVariablesContent(hexes) {
+    const lines = [
+      `/* Exported from Color Awesome on ${new Date().toISOString()} */`,
+      ':root {'
+    ]
+
+    hexes.forEach((hex, index) => {
+      lines.push(`  --color-awesome-${index + 1}: ${hex};`)
+    })
+    lines.push('}')
+
+    return lines.join('\n')
+  }
+
+  downloadTextFile(fileName, content, mimeType) {
+    const blob = new Blob([content], { type: mimeType })
     const url = URL.createObjectURL(blob)
-    
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `color-awesome-export-${new Date().toISOString().split('T')[0]}.json`
-    a.click()
-    
+
+    const link = document.createElement('a')
+    link.href = url
+    link.download = fileName
+    link.click()
+
     URL.revokeObjectURL(url)
-    this.showToast('Data exported successfully!')
   }
 
   clearAll() {

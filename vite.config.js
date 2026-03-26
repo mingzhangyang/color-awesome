@@ -11,7 +11,9 @@ export default defineConfig({
     minify: 'terser',
     rollupOptions: {
       input: {
-        main: './index.html'
+        main: './index.html',
+        hexToRgb: './hex-to-rgb/index.html',
+        contrastChecker: './contrast-checker/index.html'
       }
     }
   },

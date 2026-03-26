@@ -21,6 +21,8 @@ Extract dominant colors and pick precise pixels from uploaded images.
 - **Color conversion**: HEX, RGB, HSL, HSV, CMYK, LAB with live preview
 - **Image color picker**: Drag-and-drop, click-to-pick, dominant colors, palettes
 - **Collection management**: Save, tag, favorite, search, filter, sort, drag-and-drop
+- **Shareable deep links**: `/convert?hex=...`, `/palette?name=...&colors=...`
+- **Palette I/O formats**: Import/Export JSON, GPL, and CSS Variables
 - **Keyboard-first UX**: Command palette and shortcuts for speed
 - **Accessibility**: Contrast checks and WCAG-friendly UI
 - **Privacy-friendly**: Data stored locally in your browser
@@ -63,6 +65,11 @@ npm run worker:dev
 ```bash
 npm run worker:deploy
 ```
+
+### SEO Landing Routes
+
+- `/hex-to-rgb`
+- `/contrast-checker`
 
 ### Tests
 

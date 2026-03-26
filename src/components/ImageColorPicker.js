@@ -8,11 +8,61 @@ export class ImageColorPicker {
     this.zoomLevel = 1
     this.isEyedropperMode = false
     this.interactionsSetup = false
+    this.colorWorker = null
+    this.workerTaskId = 0
+    this.pendingWorkerTasks = new Map()
   }
 
   // Helper method to get elements within this container
   getElement(id) {
     return this.container ? this.container.querySelector(`#${id}`) : null
+  }
+
+  ensureColorWorker() {
+    if (this.colorWorker || typeof Worker === 'undefined') {
+      return this.colorWorker
+    }
+
+    this.colorWorker = new Worker(
+      new URL('../workers/colorExtractionWorker.js', import.meta.url),
+      { type: 'module' }
+    )
+
+    this.colorWorker.addEventListener('message', (event) => {
+      const { id, colors, error } = event.data || {}
+      if (!id || !this.pendingWorkerTasks.has(id)) return
+
+      const { resolve, reject } = this.pendingWorkerTasks.get(id)
+      this.pendingWorkerTasks.delete(id)
+
+      if (error) {
+        reject(new Error(error))
+        return
+      }
+
+      resolve(colors || [])
+    })
+
+    this.colorWorker.addEventListener('error', (error) => {
+      this.pendingWorkerTasks.forEach(({ reject }) => reject(error))
+      this.pendingWorkerTasks.clear()
+    })
+
+    return this.colorWorker
+  }
+
+  runWorkerTask(task, payload) {
+    const worker = this.ensureColorWorker()
+    if (!worker) {
+      return Promise.reject(new Error('Web Worker not available'))
+    }
+
+    const id = `task-${Date.now()}-${++this.workerTaskId}`
+
+    return new Promise((resolve, reject) => {
+      this.pendingWorkerTasks.set(id, { resolve, reject })
+      worker.postMessage({ id, task, payload })
+    })
   }
 
   render(container) {
@@ -543,93 +593,147 @@ export class ImageColorPicker {
     alert('Palette saved successfully!')
   }
 
-  extractDominantColors() {
+  async extractDominantColors() {
     if (!this.imageData) {
       alert('Please load an image first!')
       return
     }
 
-    // Get all pixel data
+    const extractButton = this.getElement('extract-dominant')
+    const defaultLabel = extractButton?.querySelector('.font-medium')?.textContent || 'Extract Dominant Colors'
+
+    if (extractButton) {
+      extractButton.disabled = true
+      const label = extractButton.querySelector('.font-medium')
+      if (label) label.textContent = 'Extracting...'
+    }
+
+    try {
+      let colors
+      try {
+        colors = await this.runWorkerTask('extractDominant', {
+          pixels: new Uint8ClampedArray(this.imageData.data),
+          width: this.imageData.width,
+          height: this.imageData.height,
+          limit: 8
+        })
+      } catch {
+        colors = this.extractDominantColorsSync()
+      }
+
+      this.applyExtractedColors(colors)
+      this.showToast(`Found ${colors.length} dominant colors!`)
+    } finally {
+      if (extractButton) {
+        extractButton.disabled = false
+        const label = extractButton.querySelector('.font-medium')
+        if (label) label.textContent = defaultLabel
+      }
+    }
+  }
+
+  async generatePalette() {
+    if (!this.imageData) {
+      alert('Please load an image first!')
+      return
+    }
+
+    const paletteButton = this.getElement('extract-palette')
+    const defaultLabel = paletteButton?.querySelector('.font-medium')?.textContent || 'Generate Palette'
+
+    if (paletteButton) {
+      paletteButton.disabled = true
+      const label = paletteButton.querySelector('.font-medium')
+      if (label) label.textContent = 'Generating...'
+    }
+
+    try {
+      let colors
+      try {
+        colors = await this.runWorkerTask('generatePalette', {
+          pixels: new Uint8ClampedArray(this.imageData.data),
+          width: this.imageData.width,
+          height: this.imageData.height,
+          limit: 6
+        })
+      } catch {
+        colors = this.generatePaletteSync()
+      }
+
+      this.applyExtractedColors(colors)
+      this.showToast(`Generated palette with ${colors.length} harmonious colors!`)
+    } finally {
+      if (paletteButton) {
+        paletteButton.disabled = false
+        const label = paletteButton.querySelector('.font-medium')
+        if (label) label.textContent = defaultLabel
+      }
+    }
+  }
+
+  applyExtractedColors(colors) {
+    this.extractedColors = []
+    colors.forEach((color) => {
+      const hex = color.hex || this.rgbToHex(color.r, color.g, color.b)
+      this.addExtractedColor(hex, color.r, color.g, color.b)
+    })
+  }
+
+  extractDominantColorsSync() {
     const data = this.imageData.data
     const colorMap = new Map()
-    
-    // Sample every 4th pixel for performance (can be adjusted)
     const step = 4
-    
+
     for (let i = 0; i < data.length; i += 4 * step) {
       const r = data[i]
       const g = data[i + 1]
       const b = data[i + 2]
       const a = data[i + 3]
-      
-      // Skip transparent pixels
+
       if (a < 128) continue
-      
-      // Group similar colors (reduce precision for better clustering)
+
       const clusteredR = Math.round(r / 16) * 16
       const clusteredG = Math.round(g / 16) * 16
       const clusteredB = Math.round(b / 16) * 16
-      
-      const colorKey = `${clusteredR},${clusteredG},${clusteredB}`
-      
-      if (colorMap.has(colorKey)) {
-        colorMap.set(colorKey, {
-          count: colorMap.get(colorKey).count + 1,
+      const key = `${clusteredR},${clusteredG},${clusteredB}`
+
+      if (colorMap.has(key)) {
+        colorMap.set(key, {
+          count: colorMap.get(key).count + 1,
           r: clusteredR,
           g: clusteredG,
           b: clusteredB
         })
       } else {
-        colorMap.set(colorKey, {
-          count: 1,
-          r: clusteredR,
-          g: clusteredG,
-          b: clusteredB
-        })
+        colorMap.set(key, { count: 1, r: clusteredR, g: clusteredG, b: clusteredB })
       }
     }
-    
-    // Sort by frequency and get top 8 colors
-    const sortedColors = Array.from(colorMap.values())
+
+    return Array.from(colorMap.values())
       .sort((a, b) => b.count - a.count)
       .slice(0, 8)
-    
-    // Clear existing colors and add dominant ones
-    this.extractedColors = []
-    sortedColors.forEach(color => {
-      const hex = this.rgbToHex(color.r, color.g, color.b)
-      this.addExtractedColor(hex, color.r, color.g, color.b)
-    })
-    
-    this.showToast(`Found ${sortedColors.length} dominant colors!`)
+      .map((color) => ({
+        ...color,
+        hex: this.rgbToHex(color.r, color.g, color.b)
+      }))
   }
 
-  generatePalette() {
-    if (!this.imageData) {
-      alert('Please load an image first!')
-      return
-    }
-
-    // First extract dominant colors
+  generatePaletteSync() {
     const data = this.imageData.data
     const colorMap = new Map()
-    
-    // Sample pixels for analysis
+
     for (let i = 0; i < data.length; i += 16) {
       const r = data[i]
       const g = data[i + 1]
       const b = data[i + 2]
       const a = data[i + 3]
-      
+
       if (a < 128) continue
-      
-      // Convert to HSL for better color harmony
+
       const hsl = this.rgbToHsl(r, g, b)
-      
-      // Group colors by hue (30-degree segments)
       const hueGroup = Math.floor(hsl.h / 30) * 30
       const key = `${hueGroup}-${Math.floor(hsl.s / 20)}-${Math.floor(hsl.l / 20)}`
-      
+
       if (colorMap.has(key)) {
         const existing = colorMap.get(key)
         colorMap.set(key, {
@@ -643,33 +747,26 @@ export class ImageColorPicker {
         colorMap.set(key, { count: 1, r, g, b, hue: hueGroup })
       }
     }
-    
-    // Get top colors from different hue ranges for diversity
+
     const hueGroups = new Map()
     Array.from(colorMap.values())
       .sort((a, b) => b.count - a.count)
-      .forEach(color => {
+      .forEach((color) => {
         if (!hueGroups.has(color.hue) && hueGroups.size < 6) {
           hueGroups.set(color.hue, color)
         }
       })
-    
-    // If we don't have enough diverse colors, fill with top colors
+
     const remainingColors = Array.from(colorMap.values())
       .sort((a, b) => b.count - a.count)
-      .filter(color => !Array.from(hueGroups.values()).includes(color))
+      .filter((color) => !Array.from(hueGroups.values()).includes(color))
       .slice(0, 6 - hueGroups.size)
-    
+
     const finalColors = [...hueGroups.values(), ...remainingColors]
-    
-    // Clear and add generated palette
-    this.extractedColors = []
-    finalColors.forEach(color => {
-      const hex = this.rgbToHex(color.r, color.g, color.b)
-      this.addExtractedColor(hex, color.r, color.g, color.b)
-    })
-    
-    this.showToast(`Generated palette with ${finalColors.length} harmonious colors!`)
+    return finalColors.map((color) => ({
+      ...color,
+      hex: this.rgbToHex(color.r, color.g, color.b)
+    }))
   }
 
   analyzeColors() {

@@ -8,6 +8,8 @@ import { UIEnhancements } from './utils/UIEnhancements.js'
 import { PerformanceOptimizer } from './utils/PerformanceOptimizer.js'
 import { AdComponent, refreshAdsOnNavigation } from './components/AdComponent.js'
 
+const VALID_VIEWS = ['converter', 'image-picker', 'collection']
+
 export class App {
   constructor() {
     this.currentView = 'converter'
@@ -18,6 +20,15 @@ export class App {
     this.isDesktopSidebarCollapsed = this.getInitialSidebarState()
     this.navigation = null
     this.mobileNavigation = null
+    this.lastLocationSignature = ''
+
+    this.initialConverterState = {}
+    this.initialCollectionState = {}
+    this.converterLandingPath = '/convert'
+    this.converterShareState = {
+      hex: '#3b82f6',
+      contrast: '#ffffff'
+    }
   }
 
   init() {
@@ -26,6 +37,113 @@ export class App {
     this.render()
     this.setupEventListeners()
     this.updateSeoMetadata(this.currentView)
+  }
+
+  parseLocationState(locationObject = window.location) {
+    const rawPath = locationObject.pathname || '/'
+    const pathname = rawPath === '/' ? '/' : rawPath.replace(/\/+$/, '')
+    const params = new URLSearchParams(locationObject.search || '')
+    const hashView = (locationObject.hash || '').replace(/^#/, '')
+
+    const parsed = {
+      view: 'converter',
+      converterPath: '/convert',
+      converterState: {},
+      collectionState: {},
+      pathname
+    }
+
+    if (pathname === '/image-picker') {
+      parsed.view = 'image-picker'
+    } else if (pathname === '/collection') {
+      parsed.view = 'collection'
+    } else if (pathname === '/palette') {
+      parsed.view = 'collection'
+      parsed.collectionState.sharedPalette = this.parseSharedPaletteFromParams(params)
+    } else if (pathname === '/hex-to-rgb') {
+      parsed.view = 'converter'
+      parsed.converterPath = '/hex-to-rgb'
+    } else if (pathname === '/contrast-checker') {
+      parsed.view = 'converter'
+      parsed.converterPath = '/contrast-checker'
+      parsed.converterState.focusSection = 'contrast'
+    } else if (pathname === '/convert') {
+      parsed.view = 'converter'
+      parsed.converterPath = '/convert'
+    } else if (pathname === '/') {
+      parsed.view = 'converter'
+      parsed.converterPath = '/convert'
+    }
+
+    const hex = this.normalizeHex(params.get('hex') || params.get('color'))
+    const contrast = this.normalizeHex(params.get('compare') || params.get('contrast'))
+
+    if (hex) parsed.converterState.hex = hex
+    if (contrast) parsed.converterState.contrast = contrast
+
+    if (VALID_VIEWS.includes(hashView)) {
+      parsed.view = hashView
+      if (hashView === 'converter') {
+        parsed.converterPath = '/convert'
+      }
+    }
+
+    return parsed
+  }
+
+  parseSharedPaletteFromParams(params) {
+    const rawColors = params.get('colors')
+    if (!rawColors) return null
+
+    const colors = rawColors
+      .split(',')
+      .map((value) => this.normalizeHex(value))
+      .filter(Boolean)
+
+    if (colors.length === 0) return null
+
+    const uniqueColors = [...new Set(colors.map((color) => color.toLowerCase()))]
+    const name = (params.get('name') || 'Shared Palette')
+      .replace(/[<>]/g, '')
+      .trim()
+      .slice(0, 80)
+
+    return {
+      name: name || 'Shared Palette',
+      hexes: uniqueColors
+    }
+  }
+
+  buildLocationSignature(parsed) {
+    const sharedPaletteSignature = parsed.collectionState?.sharedPalette
+      ? `${parsed.collectionState.sharedPalette.name}:${parsed.collectionState.sharedPalette.hexes.join(',')}`
+      : ''
+
+    return [
+      parsed.view,
+      parsed.converterPath,
+      parsed.converterState?.hex || '',
+      parsed.converterState?.contrast || '',
+      parsed.converterState?.focusSection || '',
+      parsed.pathname,
+      sharedPaletteSignature
+    ].join('|')
+  }
+
+  normalizeHex(value) {
+    if (!value || typeof value !== 'string') return null
+
+    let hex = value.trim().toLowerCase()
+    if (!hex.startsWith('#')) {
+      hex = `#${hex}`
+    }
+
+    if (/^#[0-9a-f]{3}$/.test(hex)) {
+      hex = `#${hex[1]}${hex[1]}${hex[2]}${hex[2]}${hex[3]}${hex[3]}`
+    }
+
+    if (!/^#[0-9a-f]{6}$/.test(hex)) return null
+    return hex
   }
 
   initializeEnhancements() {
@@ -187,7 +305,13 @@ export class App {
 
     switch (this.currentView) {
       case 'converter': {
-        const converter = new ColorConverter()
+        const converter = new ColorConverter({
+          initialHex: this.initialConverterState.hex,
+          initialContrast: this.initialConverterState.contrast,
+          focusSection: this.initialConverterState.focusSection,
+          sharePath: this.converterLandingPath,
+          onStateChange: (state) => this.handleConverterStateChange(state)
+        })
         converter.render(newContent)
         break
       }
@@ -197,7 +321,9 @@ export class App {
         break
       }
       case 'collection': {
-        const collection = new ColorCollection()
+        const collection = new ColorCollection({
+          sharedPalette: this.initialCollectionState.sharedPalette || null
+        })
         collection.render(newContent)
         break
       }
@@ -264,6 +390,11 @@ export class App {
       return
     }
 
+    if (view === 'converter') {
+      this.converterLandingPath = '/convert'
+      this.initialConverterState.focusSection = ''
+    }
+
     this.previousView = this.currentView
     this.currentView = view
     this.renderCurrentView()
@@ -278,11 +409,73 @@ export class App {
 
     refreshAdsOnNavigation()
 
-    if (window.location.hash !== `#${view}`) {
-      window.history.pushState({ view }, '', `#${view}`)
+    const targetUrl = this.buildUrlForView(view)
+    const currentUrl = `${window.location.pathname}${window.location.search}`
+    if (targetUrl !== currentUrl) {
+      window.history.pushState({ view }, '', targetUrl)
     }
 
+    this.lastLocationSignature = this.buildLocationSignature(this.parseLocationState(window.location))
     this.updateSeoMetadata(view)
+  }
+
+  handleConverterStateChange(state) {
+    if (!state) return
+
+    this.converterShareState = {
+      ...this.converterShareState,
+      ...state
+    }
+
+    if (state.sharePath) {
+      this.converterLandingPath = state.sharePath
+    }
+
+    if (this.currentView !== 'converter') return
+
+    const targetUrl = this.buildConverterUrl(this.converterShareState)
+    const currentUrl = `${window.location.pathname}${window.location.search}`
+
+    if (targetUrl !== currentUrl) {
+      window.history.replaceState({ view: 'converter' }, '', targetUrl)
+    }
+
+    this.lastLocationSignature = this.buildLocationSignature(this.parseLocationState(window.location))
+    this.updateSeoMetadata('converter')
+  }
+
+  buildConverterUrl(state = this.converterShareState) {
+    const path = this.converterLandingPath || '/convert'
+    const hex = this.normalizeHex(state.hex) || '#3b82f6'
+    const contrast = this.normalizeHex(state.contrast) || '#ffffff'
+    const params = new URLSearchParams()
+
+    if (hex !== '#3b82f6') {
+      params.set('hex', hex)
+    }
+
+    if (contrast !== '#ffffff') {
+      params.set('compare', contrast)
+    }
+
+    const query = params.toString()
+    return query ? `${path}?${query}` : path
+  }
+
+  buildUrlForView(view) {
+    if (view === 'converter') {
+      return this.buildConverterUrl(this.converterShareState)
+    }
+
+    if (view === 'image-picker') {
+      return '/image-picker'
+    }
+
+    if (view === 'collection') {
+      return '/collection'
+    }
+
+    return '/convert'
   }
 
   setupEventListeners() {
@@ -290,25 +483,34 @@ export class App {
       console.log('Saving data before page unload...')
     })
 
-    window.addEventListener('popstate', (e) => {
-      if (e.state && e.state.view) {
-        this.previousView = this.currentView
-        this.currentView = e.state.view
-        this.renderCurrentView()
-        this.syncNavigationState(e.state.view)
-        this.updateSeoMetadata(e.state.view)
+    window.addEventListener('popstate', () => {
+      const parsed = this.parseLocationState(window.location)
+      const signature = this.buildLocationSignature(parsed)
+      if (signature === this.lastLocationSignature) return
+
+      this.lastLocationSignature = signature
+      this.previousView = this.currentView
+      this.currentView = parsed.view
+      this.initialConverterState = parsed.converterState
+      this.initialCollectionState = parsed.collectionState
+      this.converterLandingPath = parsed.converterPath
+
+      if (parsed.converterState.hex || parsed.converterState.contrast) {
+        this.converterShareState = {
+          ...this.converterShareState,
+          ...parsed.converterState
+        }
       }
+
+      this.renderCurrentView()
+      this.syncNavigationState(parsed.view)
+      this.updateSeoMetadata(parsed.view)
     })
 
     window.addEventListener('hashchange', () => {
       const hash = window.location.hash.slice(1)
-      const validViews = ['converter', 'image-picker', 'collection']
-      if (validViews.includes(hash) && hash !== this.currentView) {
-        this.previousView = this.currentView
-        this.currentView = hash
-        this.renderCurrentView()
-        this.syncNavigationState(hash)
-        this.updateSeoMetadata(hash)
+      if (VALID_VIEWS.includes(hash) && hash !== this.currentView) {
+        this.switchView(hash)
       }
     })
 
@@ -316,7 +518,9 @@ export class App {
       window.addEventListener('load', () => {
         setTimeout(() => {
           const navigation = performance.getEntriesByType('navigation')[0]
-          console.log(`Page load time: ${navigation.loadEventEnd - navigation.loadEventStart}ms`)
+          if (navigation) {
+            console.log(`Page load time: ${navigation.loadEventEnd - navigation.loadEventStart}ms`)
+          }
         }, 0)
       })
     }
@@ -338,11 +542,20 @@ export class App {
   }
 
   applyInitialViewFromLocation() {
-    const initialHash = window.location.hash.slice(1)
-    const validViews = ['converter', 'image-picker', 'collection']
-    if (validViews.includes(initialHash)) {
-      this.currentView = initialHash
+    const parsed = this.parseLocationState(window.location)
+    this.currentView = parsed.view
+    this.initialConverterState = parsed.converterState
+    this.initialCollectionState = parsed.collectionState
+    this.converterLandingPath = parsed.converterPath
+
+    if (parsed.converterState.hex || parsed.converterState.contrast) {
+      this.converterShareState = {
+        ...this.converterShareState,
+        ...parsed.converterState
+      }
     }
+
+    this.lastLocationSignature = this.buildLocationSignature(parsed)
   }
 
   syncNavigationState(view) {
@@ -355,27 +568,58 @@ export class App {
   }
 
   updateSeoMetadata(view) {
-    const baseUrl = 'https://color-awesome.orangely.xyz/'
-    const seoByView = {
-      converter: {
-        title: 'Color Awesome – Free Color Converter, Picker & Palette Builder',
-        description: 'Convert HEX, RGB, HSL, HSV, CMYK & LAB colors, pick from images, build palettes, and verify WCAG contrast.',
-        url: baseUrl
-      },
-      'image-picker': {
+    const baseUrl = 'https://color-awesome.orangely.xyz'
+    const currentPath = window.location.pathname === '/' ? '' : window.location.pathname
+    const currentSearch = window.location.search || ''
+
+    let target = {
+      title: 'Color Awesome – Free Color Converter, Picker & Palette Builder',
+      description: 'Convert HEX, RGB, HSL, HSV, CMYK & LAB colors, pick from images, build palettes, and verify WCAG contrast.',
+      url: `${baseUrl}${currentPath || '/'}${currentSearch}`
+    }
+
+    if (view === 'image-picker') {
+      target = {
         title: 'Image Color Picker – Extract Colors from Any Image | Color Awesome',
         description: 'Pick exact pixels and extract dominant palettes from uploaded images with instant HEX/RGB/HSL values.',
-        url: `${baseUrl}#image-picker`
-      },
-      collection: {
-        title: 'Color Collection – Save and Export Palettes | Color Awesome',
-        description: 'Save, tag, search, and export reusable color palettes for design and development workflows.',
-        url: `${baseUrl}#collection`
+        url: `${baseUrl}/image-picker`
+      }
+    } else if (view === 'collection') {
+      if (window.location.pathname === '/palette') {
+        target = {
+          title: 'Shared Color Palette | Color Awesome',
+          description: 'Open and import shared color palettes, then organize and export them in multiple formats.',
+          url: `${baseUrl}/palette${currentSearch}`
+        }
+      } else {
+        target = {
+          title: 'Color Collection – Save and Export Palettes | Color Awesome',
+          description: 'Save, tag, search, and export reusable color palettes for design and development workflows.',
+          url: `${baseUrl}/collection`
+        }
+      }
+    } else if (window.location.pathname === '/hex-to-rgb') {
+      target = {
+        title: 'HEX to RGB Converter – Fast Online Color Conversion | Color Awesome',
+        description: 'Convert HEX colors to RGB instantly, copy values, and explore related formats with live preview.',
+        url: `${baseUrl}/hex-to-rgb${currentSearch}`
+      }
+    } else if (window.location.pathname === '/contrast-checker') {
+      target = {
+        title: 'WCAG Contrast Checker – Accessibility Color Tool | Color Awesome',
+        description: 'Check WCAG AA/AAA contrast ratios between two colors and improve accessibility for text and UI.',
+        url: `${baseUrl}/contrast-checker${currentSearch}`
+      }
+    } else if (window.location.pathname === '/convert') {
+      target = {
+        title: 'Color Converter – HEX, RGB, HSL, HSV, CMYK, LAB | Color Awesome',
+        description: 'Convert between HEX, RGB, HSL, HSV, CMYK, and LAB color formats with instant updates.',
+        url: `${baseUrl}/convert${currentSearch}`
       }
     }
 
-    const target = seoByView[view] || seoByView.converter
     document.title = target.title
+    this.setCanonicalUrl(target.url)
     this.setMetaByName('description', target.description)
     this.setMetaByProperty('og:title', target.title)
     this.setMetaByProperty('og:description', target.description)
@@ -383,6 +627,13 @@ export class App {
     this.setMetaByName('twitter:title', target.title)
     this.setMetaByName('twitter:description', target.description)
     this.setMetaByName('twitter:url', target.url)
+  }
+
+  setCanonicalUrl(url) {
+    const canonical = document.head.querySelector('link[rel="canonical"]')
+    if (canonical) {
+      canonical.setAttribute('href', url)
+    }
   }
 
   setMetaByName(name, content) {
