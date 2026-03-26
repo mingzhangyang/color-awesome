@@ -432,31 +432,80 @@ export class UIEnhancements {
   // Smooth page transitions
   transitionToView(fromElement, toElement, direction = 'left') {
     return new Promise((resolve) => {
-      const animations = {
-        left: { out: 'animate-slide-out-left', in: 'animate-slide-in-right' },
-        right: { out: 'animate-slide-out-right', in: 'animate-slide-in-left' },
-        up: { out: 'animate-slide-out-up', in: 'animate-slide-in-down' },
-        down: { out: 'animate-slide-out-down', in: 'animate-slide-in-up' }
+      if (!toElement) {
+        resolve()
+        return
       }
-      
-      const anim = animations[direction] || animations.left
-      
+
+      const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+      if (prefersReducedMotion) {
+        resolve()
+        return
+      }
+
+      const axis = direction === 'up' || direction === 'down' ? 'Y' : 'X'
+      const distance = (direction === 'left' || direction === 'up') ? 28 : -28
+      const incomingStart = `translate${axis}(${-distance}px)`
+      const outgoingEnd = `translate${axis}(${distance}px)`
+
+      toElement.style.willChange = 'transform, opacity'
       if (fromElement) {
-        fromElement.classList.add(anim.out)
-        setTimeout(() => {
-          fromElement.style.display = 'none'
-          fromElement.classList.remove(anim.out)
-        }, 300)
+        fromElement.style.willChange = 'transform, opacity'
       }
-      
-      setTimeout(() => {
-        toElement.style.display = 'block'
-        toElement.classList.add(anim.in)
-        setTimeout(() => {
-          toElement.classList.remove(anim.in)
+
+      if (typeof toElement.animate !== 'function') {
+        if (fromElement) {
+          fromElement.style.opacity = '0'
+          fromElement.style.transform = outgoingEnd
+        }
+        toElement.style.opacity = '1'
+        toElement.style.transform = 'translate(0, 0)'
+        requestAnimationFrame(() => {
+          if (fromElement) {
+            fromElement.style.willChange = ''
+          }
+          toElement.style.willChange = ''
           resolve()
-        }, 300)
-      }, fromElement ? 150 : 0)
+        })
+        return
+      }
+
+      const incomingAnimation = toElement.animate([
+        { opacity: 0, transform: incomingStart },
+        { opacity: 1, transform: 'translate(0, 0)' }
+      ], {
+        duration: 260,
+        easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+        fill: 'both'
+      })
+
+      const outgoingAnimation = fromElement
+        ? fromElement.animate([
+          { opacity: 1, transform: 'translate(0, 0)' },
+          { opacity: 0, transform: outgoingEnd }
+        ], {
+          duration: 220,
+          easing: 'cubic-bezier(0.4, 0, 1, 1)',
+          fill: 'both'
+        })
+        : null
+
+      const animations = [incomingAnimation.finished]
+      if (outgoingAnimation) {
+        animations.push(outgoingAnimation.finished)
+      }
+
+      Promise.all(animations).finally(() => {
+        toElement.style.willChange = ''
+        toElement.style.opacity = ''
+        toElement.style.transform = ''
+        if (fromElement) {
+          fromElement.style.willChange = ''
+          fromElement.style.opacity = ''
+          fromElement.style.transform = ''
+        }
+        resolve()
+      })
     })
   }
 

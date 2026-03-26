@@ -102,14 +102,14 @@ export class ColorCollection {
 
         <!-- View Toggle -->
         <div class="flex justify-center">
-          <div class="bg-gray-100 p-1 rounded-lg">
-            <button class="view-toggle px-4 py-2 rounded-md transition-colors ${this.currentView === 'colors' ? 'bg-white shadow-sm' : ''}" 
+          <div class="bg-gray-100 p-1 rounded-lg flex flex-wrap justify-center gap-1">
+            <button class="view-toggle px-3 sm:px-4 py-2 rounded-md text-sm transition-colors ${this.currentView === 'colors' ? 'bg-white shadow-sm' : ''}" 
                     data-view="colors">
-              🎨 Individual Colors (${this.savedColors.length})
+              Individual Colors (${this.savedColors.length})
             </button>
-            <button class="view-toggle px-4 py-2 rounded-md transition-colors ${this.currentView === 'palettes' ? 'bg-white shadow-sm' : ''}" 
+            <button class="view-toggle px-3 sm:px-4 py-2 rounded-md text-sm transition-colors ${this.currentView === 'palettes' ? 'bg-white shadow-sm' : ''}" 
                     data-view="palettes">
-              🎭 Color Palettes (${this.savedPalettes.length})
+              Color Palettes (${this.savedPalettes.length})
             </button>
           </div>
         </div>
@@ -125,10 +125,10 @@ export class ColorCollection {
                        class="input-field search-input" 
                        placeholder="Search colors or palettes...">
               </div>
-              <div class="flex space-x-2">
-                <button class="btn-secondary" id="import-data">📁 Import</button>
-                <button class="btn-secondary" id="export-data">💾 Export</button>
-                <button class="btn-primary" id="clear-all">🗑️ Clear All</button>
+              <div class="flex flex-wrap justify-center gap-2 w-full sm:w-auto">
+                <button class="btn-secondary flex-1 sm:flex-none" id="import-data">Import</button>
+                <button class="btn-secondary flex-1 sm:flex-none" id="export-data">Export</button>
+                <button class="btn-primary flex-1 sm:flex-none" id="clear-all">Clear All</button>
               </div>
             </div>
             
@@ -139,10 +139,10 @@ export class ColorCollection {
                   All
                 </button>
                 <button class="filter-btn ${this.currentFilter === 'favorites' ? 'active' : ''}" data-filter="favorites">
-                  ⭐ Favorites
+                  Favorites
                 </button>
                 <button class="filter-btn ${this.currentFilter === 'recent' ? 'active' : ''}" data-filter="recent">
-                  🕒 Recent
+                  Recent
                 </button>
                 <select id="tag-filter" class="input-field w-auto">
                   <option value="">Filter by tag...</option>
@@ -152,7 +152,7 @@ export class ColorCollection {
               
               <div class="flex space-x-2">
                 <button class="btn-secondary ${this.isDragMode ? 'bg-primary-100 border-primary-300' : ''} organize-mode-btn" id="toggle-drag-mode">
-                  ${this.isDragMode ? '✅ Organizing' : '🔄 Organize'}
+                  ${this.isDragMode ? 'Organizing' : 'Organize'}
                 </button>
                 <select id="sort-options" class="input-field w-auto">
                   <option value="newest">Newest First</option>
@@ -245,10 +245,10 @@ export class ColorCollection {
       this.isDragMode = !this.isDragMode
       const btn = this.getElement('toggle-drag-mode')
       if (this.isDragMode) {
-        btn.textContent = '✅ Organizing'
+        btn.textContent = 'Organizing'
         btn.classList.add('bg-primary-100', 'border-primary-300')
       } else {
-        btn.textContent = '🔄 Organize'
+        btn.textContent = 'Organize'
         btn.classList.remove('bg-primary-100', 'border-primary-300')
       }
       this.renderContent()

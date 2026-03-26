@@ -131,12 +131,12 @@ export class ColorConverter {
         </div>
 
         <!-- Actions -->
-        <div class="flex justify-center space-x-4">
-          <button class="btn-primary save-color-btn" id="save-color">
-            💾 Save Color
+        <div class="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
+          <button class="btn-primary save-color-btn w-full sm:w-auto" id="save-color">
+            Save Color
           </button>
-          <button class="btn-secondary" id="random-color">
-            🎲 Random Color
+          <button class="btn-secondary w-full sm:w-auto" id="random-color">
+            Randomize
           </button>
         </div>
 
@@ -148,15 +148,15 @@ export class ColorConverter {
             <div class="space-y-3">
               <div class="flex justify-between items-center">
                 <span class="text-sm">Valid HEX format:</span>
-                <span id="hex-valid" class="text-sm font-medium">✅ Valid</span>
+                <span id="hex-valid" class="text-sm font-medium">Valid</span>
               </div>
               <div class="flex justify-between items-center">
                 <span class="text-sm">Web safe color:</span>
-                <span id="web-safe" class="text-sm font-medium">✅ Yes</span>
+                <span id="web-safe" class="text-sm font-medium">Yes</span>
               </div>
               <div class="flex justify-between items-center">
                 <span class="text-sm">CSS named color:</span>
-                <span id="css-named" class="text-sm font-medium">❌ No</span>
+                <span id="css-named" class="text-sm font-medium">No</span>
               </div>
             </div>
           </div>
@@ -179,15 +179,15 @@ export class ColorConverter {
                 </div>
                 <div class="flex justify-between items-center">
                   <span class="text-sm">WCAG AA (normal):</span>
-                  <span id="wcag-aa-normal" class="text-sm font-medium">✅ Pass</span>
+                  <span id="wcag-aa-normal" class="text-sm font-medium">Pass</span>
                 </div>
                 <div class="flex justify-between items-center">
                   <span class="text-sm">WCAG AA (large):</span>
-                  <span id="wcag-aa-large" class="text-sm font-medium">✅ Pass</span>
+                  <span id="wcag-aa-large" class="text-sm font-medium">Pass</span>
                 </div>
                 <div class="flex justify-between items-center">
                   <span class="text-sm">WCAG AAA:</span>
-                  <span id="wcag-aaa" class="text-sm font-medium">❌ Fail</span>
+                  <span id="wcag-aaa" class="text-sm font-medium">Fail</span>
                 </div>
               </div>
             </div>
@@ -652,9 +652,17 @@ export class ColorConverter {
     const wcagAALarge = ratio >= 3.0
     const wcagAAA = ratio >= 7.0
     
-    this.getElement('wcag-aa-normal').innerHTML = wcagAANormal ? '✅ Pass' : '❌ Fail'
-    this.getElement('wcag-aa-large').innerHTML = wcagAALarge ? '✅ Pass' : '❌ Fail'
-    this.getElement('wcag-aaa').innerHTML = wcagAAA ? '✅ Pass' : '❌ Fail'
+    const aaNormalEl = this.getElement('wcag-aa-normal')
+    const aaLargeEl = this.getElement('wcag-aa-large')
+    const aaaEl = this.getElement('wcag-aaa')
+
+    aaNormalEl.textContent = wcagAANormal ? 'Pass' : 'Fail'
+    aaLargeEl.textContent = wcagAALarge ? 'Pass' : 'Fail'
+    aaaEl.textContent = wcagAAA ? 'Pass' : 'Fail'
+
+    this.setStatusTone(aaNormalEl, wcagAANormal)
+    this.setStatusTone(aaLargeEl, wcagAALarge)
+    this.setStatusTone(aaaEl, wcagAAA)
   }
 
   updateColorValidation() {
@@ -662,9 +670,23 @@ export class ColorConverter {
     const webSafe = this.isWebSafeColor(this.currentColor)
     const cssNamed = this.getCSSColorName(this.currentColor)
     
-    this.getElement('hex-valid').innerHTML = hexValid ? '✅ Valid' : '❌ Invalid'
-    this.getElement('web-safe').innerHTML = webSafe ? '✅ Yes' : '❌ No'
-    this.getElement('css-named').innerHTML = cssNamed ? `✅ ${cssNamed}` : '❌ No'
+    const hexValidEl = this.getElement('hex-valid')
+    const webSafeEl = this.getElement('web-safe')
+    const cssNamedEl = this.getElement('css-named')
+
+    hexValidEl.textContent = hexValid ? 'Valid' : 'Invalid'
+    webSafeEl.textContent = webSafe ? 'Yes' : 'No'
+    cssNamedEl.textContent = cssNamed || 'No'
+
+    this.setStatusTone(hexValidEl, hexValid)
+    this.setStatusTone(webSafeEl, webSafe)
+    this.setStatusTone(cssNamedEl, Boolean(cssNamed))
+  }
+
+  setStatusTone(element, isPositive) {
+    if (!element) return
+    element.classList.toggle('text-emerald-600', isPositive)
+    element.classList.toggle('text-rose-600', !isPositive)
   }
 
   isValidHex(hex) {

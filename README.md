@@ -4,7 +4,7 @@
 
 A fast, client-side web app for color conversion, image-based color extraction, and palette management. Built for designers and developers who work with colors every day.
 
-**Live Demo:** [https://color-awesome.pages.dev/](https://color-awesome.pages.dev/)
+**Deployment Target:** Cloudflare Workers (Static Assets)
 
 ## Screenshots
 
@@ -50,6 +50,18 @@ Open `http://localhost:3000`.
 ```bash
 npm run build
 npm run preview
+```
+
+### Run as Cloudflare Worker
+
+```bash
+npm run worker:dev
+```
+
+### Deploy to Cloudflare Worker
+
+```bash
+npm run worker:deploy
 ```
 
 ### Tests

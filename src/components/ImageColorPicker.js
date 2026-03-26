@@ -18,7 +18,7 @@ export class ImageColorPicker {
   render(container) {
     this.container = container
     container.innerHTML = `
-      <div class="space-y-8">
+      <div class="image-picker space-y-8">
         <!-- Hero Section -->
         <div class="text-center">
           <h2 class="text-3xl font-bold text-gray-900 mb-4">Image Color Picker</h2>
@@ -30,10 +30,13 @@ export class ImageColorPicker {
 
         <!-- Upload Area -->
         <div class="card max-w-md mx-auto">
-          <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center" id="upload-area">
+          <div class="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center bg-slate-50/65 transition-colors duration-200" id="upload-area">
             <div class="space-y-4">
-              <div class="mx-auto w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
-                📷
+              <div class="mx-auto w-12 h-12 bg-white border border-slate-200 rounded-lg flex items-center justify-center text-slate-600">
+                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M4 7a2 2 0 012-2h3l1.2-1.5h3.6L15 5h3a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2V7z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                  <circle cx="12" cy="13" r="3.2" stroke="currentColor" stroke-width="1.8"/>
+                </svg>
               </div>
               <div>
                 <p class="text-gray-600">Drop an image here or</p>
@@ -42,7 +45,7 @@ export class ImageColorPicker {
               </div>
               <div class="text-sm text-gray-500">or</div>
               <div>
-                <input type="url" id="url-input" placeholder="Enter image URL" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500">
+                <input type="url" id="url-input" placeholder="Enter image URL" class="input-field">
                 <button class="btn-secondary mt-2" id="load-url">Load from URL</button>
               </div>
               <p class="text-xs text-gray-400">PNG, JPG, JPEG up to 10MB</p>
@@ -53,12 +56,12 @@ export class ImageColorPicker {
         <!-- Image Canvas Area -->
         <div id="canvas-container" class="hidden">
           <div class="card">
-            <div class="flex justify-between items-center mb-4">
+            <div class="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center mb-4">
               <div>
                 <h3 class="text-lg font-semibold">Click on the image to pick colors</h3>
                 <p class="text-sm text-gray-600" id="cursor-info">Move mouse over image to see color preview</p>
               </div>
-              <div class="flex space-x-2">
+              <div class="flex flex-wrap gap-2">
                  <button class="btn-secondary eyedropper-btn" id="toggle-eyedropper" title="Toggle Eyedropper Mode">
                   🔍 Eyedropper
                  </button>
@@ -67,8 +70,8 @@ export class ImageColorPicker {
             </div>
             
             <!-- Zoom and Tool Controls -->
-            <div class="flex justify-between items-center mb-4 p-3 bg-gray-50 rounded">
-              <div class="flex items-center space-x-4">
+            <div class="flex flex-col gap-3 lg:flex-row lg:justify-between lg:items-center mb-4 p-3 bg-gray-50 rounded">
+              <div class="flex flex-wrap items-center gap-2 sm:gap-3">
                 <span class="text-sm font-medium">Zoom:</span>
                  <button class="btn-sm zoom-out-btn" id="zoom-out">−</button>
                  <span class="text-sm font-mono zoom-level" id="zoom-level">100%</span>
@@ -76,7 +79,7 @@ export class ImageColorPicker {
                  <button class="btn-sm zoom-reset-btn" id="zoom-reset">Reset</button>
               </div>
               
-              <div class="flex items-center space-x-2">
+              <div class="flex items-center space-x-2 self-start lg:self-auto">
                 <div class="w-8 h-8 border-2 border-gray-300 rounded" id="live-color-preview" style="background-color: #ffffff"></div>
                 <span class="text-sm font-mono" id="live-color-hex">#ffffff</span>
               </div>
