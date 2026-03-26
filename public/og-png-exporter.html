@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OG SVG 转 PNG 工具</title>
+  <style>
+    :root {
+      --bg: #f3faf8;
+      --panel: #ffffff;
+      --text: #0f172a;
+      --muted: #475569;
+      --primary: #0d9488;
+      --secondary: #2563eb;
+      --border: #dbe7e3;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 10% 0%, rgba(13, 148, 136, 0.14), transparent 35%),
+        radial-gradient(circle at 100% 100%, rgba(37, 99, 235, 0.12), transparent 35%),
+        var(--bg);
+      min-height: 100vh;
+      padding: 28px;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: grid;
+      gap: 20px;
+      grid-template-columns: 340px 1fr;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: 0 12px 28px -20px rgba(15, 23, 42, 0.35);
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 26px;
+      color: #0f766e;
+    }
+
+    .sub {
+      margin: 0 0 16px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .group { margin-bottom: 14px; }
+
+    label {
+      display: block;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    input[type="number"],
+    input[type="text"],
+    input[type="file"] {
+      width: 100%;
+      min-height: 40px;
+      border: 1px solid #cfded8;
+      border-radius: 10px;
+      padding: 8px 10px;
+      font-size: 14px;
+      background: #fff;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    button {
+      width: 100%;
+      min-height: 42px;
+      border: none;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform .15s ease, opacity .15s ease;
+    }
+
+    button:hover { transform: translateY(-1px); }
+    button:active { transform: translateY(0); }
+
+    .btn-primary {
+      color: #fff;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+    }
+
+    .btn-secondary {
+      color: #0f766e;
+      border: 1px solid #cde6e2;
+      background: #effaf8;
+    }
+
+    .status {
+      border-radius: 10px;
+      padding: 10px 12px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      color: #334155;
+      font-size: 13px;
+      line-height: 1.45;
+      min-height: 46px;
+    }
+
+    .preview-wrap {
+      display: grid;
+      gap: 12px;
+    }
+
+    .preview-box {
+      border: 1px dashed #bfd5cf;
+      border-radius: 14px;
+      background: #fff;
+      min-height: 360px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 14px;
+      overflow: auto;
+    }
+
+    .preview-box img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+      box-shadow: 0 10px 30px -18px rgba(15, 23, 42, 0.5);
+    }
+
+    .hint {
+      font-size: 12px;
+      color: #64748b;
+    }
+
+    @media (max-width: 960px) {
+      .container { grid-template-columns: 1fr; }
+      body { padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <section class="panel">
+      <h1>OG SVG 转 PNG</h1>
+      <p class="sub">默认加载 <code>/og-card.svg</code>。也可一键加载 <code>/app-icon.svg</code>，或上传任意 SVG 再导出 PNG。</p>
+
+      <div class="group">
+        <div class="row">
+          <button id="load-default" class="btn-secondary" type="button">加载默认 SVG</button>
+          <button id="load-app-icon" class="btn-secondary" type="button">加载应用图标 SVG</button>
+        </div>
+      </div>
+
+      <div class="group">
+        <label for="svg-file">上传 SVG 文件</label>
+        <input id="svg-file" type="file" accept=".svg,image/svg+xml" />
+      </div>
+
+      <div class="group row">
+        <div>
+          <label for="png-width">PNG 宽度</label>
+          <input id="png-width" type="number" min="1" value="1200" />
+        </div>
+        <div>
+          <label for="png-height">PNG 高度</label>
+          <input id="png-height" type="number" min="1" value="630" />
+        </div>
+      </div>
+
+      <div class="group">
+        <label for="file-name">文件名（不含扩展名）</label>
+        <input id="file-name" type="text" value="og-card" />
+      </div>
+
+      <div class="group">
+        <button id="download-png" class="btn-primary" type="button">下载 PNG</button>
+      </div>
+
+      <div id="status" class="status">等待加载 SVG...</div>
+    </section>
+
+    <section class="panel preview-wrap">
+      <div class="preview-box">
+        <img id="svg-preview" alt="SVG 预览" />
+      </div>
+      <p class="hint">提示：导出尺寸建议保持 1200×630（标准 OG 图）。</p>
+    </section>
+  </div>
+
+  <canvas id="export-canvas" style="display:none"></canvas>
+
+  <script>
+    const defaultSvgPath = '/og-card.svg'
+    const appIconSvgPath = '/app-icon.svg'
+    const statusEl = document.getElementById('status')
+    const previewEl = document.getElementById('svg-preview')
+    const fileInputEl = document.getElementById('svg-file')
+    const widthEl = document.getElementById('png-width')
+    const heightEl = document.getElementById('png-height')
+    const fileNameEl = document.getElementById('file-name')
+    const canvasEl = document.getElementById('export-canvas')
+
+    let currentSvgText = ''
+    let previewObjectUrl = null
+
+    function setStatus(message, isError = false) {
+      statusEl.textContent = message
+      statusEl.style.borderColor = isError ? '#fecaca' : '#e2e8f0'
+      statusEl.style.background = isError ? '#fff1f2' : '#f8fafc'
+      statusEl.style.color = isError ? '#9f1239' : '#334155'
+    }
+
+    function cleanupPreviewUrl() {
+      if (previewObjectUrl) {
+        URL.revokeObjectURL(previewObjectUrl)
+        previewObjectUrl = null
+      }
+    }
+
+    function parseSvgSize(svgText) {
+      const parser = new DOMParser()
+      const doc = parser.parseFromString(svgText, 'image/svg+xml')
+      const svg = doc.querySelector('svg')
+      if (!svg) return
+
+      const widthAttr = svg.getAttribute('width')
+      const heightAttr = svg.getAttribute('height')
+
+      const width = widthAttr ? parseFloat(widthAttr) : NaN
+      const height = heightAttr ? parseFloat(heightAttr) : NaN
+
+      if (Number.isFinite(width) && Number.isFinite(height)) {
+        widthEl.value = String(Math.round(width))
+        heightEl.value = String(Math.round(height))
+        return
+      }
+
+      const viewBox = svg.getAttribute('viewBox')
+      if (viewBox) {
+        const parts = viewBox.split(/\s+/).map(Number)
+        if (parts.length === 4 && Number.isFinite(parts[2]) && Number.isFinite(parts[3])) {
+          widthEl.value = String(Math.round(parts[2]))
+          heightEl.value = String(Math.round(parts[3]))
+        }
+      }
+    }
+
+    function setPreview(svgText) {
+      cleanupPreviewUrl()
+      const blob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' })
+      previewObjectUrl = URL.createObjectURL(blob)
+      previewEl.src = previewObjectUrl
+    }
+
+    async function loadSvgFromText(svgText, name = 'og-card') {
+      currentSvgText = svgText
+      parseSvgSize(svgText)
+      setPreview(svgText)
+      fileNameEl.value = name.replace(/\.svg$/i, '')
+      setStatus(`SVG 已加载：${fileNameEl.value}.svg`)
+    }
+
+    async function loadDefaultSvg() {
+      try {
+        const res = await fetch(defaultSvgPath, { cache: 'no-store' })
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        const svgText = await res.text()
+        await loadSvgFromText(svgText, 'og-card')
+      } catch (err) {
+        setStatus(`加载默认 SVG 失败：${err.message}`, true)
+      }
+    }
+
+    async function loadAppIconSvg() {
+      try {
+        const res = await fetch(appIconSvgPath, { cache: 'no-store' })
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        const svgText = await res.text()
+        await loadSvgFromText(svgText, 'app-icon')
+      } catch (err) {
+        setStatus(`加载应用图标 SVG 失败：${err.message}`, true)
+      }
+    }
+
+    async function exportToPng() {
+      if (!currentSvgText) {
+        setStatus('请先加载 SVG。', true)
+        return
+      }
+
+      const width = parseInt(widthEl.value, 10)
+      const height = parseInt(heightEl.value, 10)
+      if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
+        setStatus('PNG 宽高必须是正整数。', true)
+        return
+      }
+
+      const svgBlob = new Blob([currentSvgText], { type: 'image/svg+xml;charset=utf-8' })
+      const svgUrl = URL.createObjectURL(svgBlob)
+      const image = new Image()
+
+      image.onload = () => {
+        canvasEl.width = width
+        canvasEl.height = height
+
+        const ctx = canvasEl.getContext('2d')
+        ctx.clearRect(0, 0, width, height)
+        ctx.drawImage(image, 0, 0, width, height)
+
+        canvasEl.toBlob((pngBlob) => {
+          URL.revokeObjectURL(svgUrl)
+          if (!pngBlob) {
+            setStatus('PNG 导出失败，请重试。', true)
+            return
+          }
+
+          const downloadUrl = URL.createObjectURL(pngBlob)
+          const a = document.createElement('a')
+          const baseName = (fileNameEl.value || 'og-card').trim() || 'og-card'
+          a.href = downloadUrl
+          a.download = `${baseName}-${width}x${height}.png`
+          document.body.appendChild(a)
+          a.click()
+          a.remove()
+          URL.revokeObjectURL(downloadUrl)
+
+          setStatus(`PNG 已导出：${baseName}-${width}x${height}.png`)
+        }, 'image/png')
+      }
+
+      image.onerror = () => {
+        URL.revokeObjectURL(svgUrl)
+        setStatus('SVG 渲染失败，无法导出 PNG。', true)
+      }
+
+      image.src = svgUrl
+    }
+
+    document.getElementById('load-default').addEventListener('click', loadDefaultSvg)
+    document.getElementById('load-app-icon').addEventListener('click', loadAppIconSvg)
+    document.getElementById('download-png').addEventListener('click', exportToPng)
+
+    fileInputEl.addEventListener('change', async (event) => {
+      const file = event.target.files && event.target.files[0]
+      if (!file) return
+
+      try {
+        const text = await file.text()
+        await loadSvgFromText(text, file.name)
+      } catch (err) {
+        setStatus(`读取文件失败：${err.message}`, true)
+      }
+    })
+
+    loadDefaultSvg()
+  </script>
+</body>
+</html>

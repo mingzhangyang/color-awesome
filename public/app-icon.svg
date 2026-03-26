@@ -1,0 +1,35 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Color Awesome App Icon</title>
+  <desc id="desc">Rounded app icon with OG gradient colors and a geometric white mark.</desc>
+
+  <defs>
+    <linearGradient id="iconGradient" x1="144" y1="132" x2="902" y2="904" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0D9488"/>
+      <stop offset="0.55" stop-color="#C026D3"/>
+      <stop offset="1" stop-color="#2563EB"/>
+    </linearGradient>
+
+    <radialGradient id="shineA" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(286 236) rotate(38) scale(282 222)">
+      <stop stop-color="#FFFFFF" stop-opacity="0.42"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+
+    <radialGradient id="shineB" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(782 808) rotate(-22) scale(308 250)">
+      <stop stop-color="#FFFFFF" stop-opacity="0.26"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect x="96" y="96" width="832" height="832" rx="214" fill="url(#iconGradient)"/>
+  <rect x="96" y="96" width="832" height="832" rx="214" fill="url(#shineA)"/>
+  <rect x="96" y="96" width="832" height="832" rx="214" fill="url(#shineB)"/>
+
+  <path d="M336 390L512 290L688 390M336 390V610L512 710L688 610V390M512 290V510M512 510L336 610M512 510L688 610" stroke="white" stroke-width="58" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="512" cy="290" r="24" fill="white"/>
+  <circle cx="336" cy="390" r="24" fill="white"/>
+  <circle cx="688" cy="390" r="24" fill="white"/>
+  <circle cx="512" cy="510" r="24" fill="white"/>
+  <circle cx="336" cy="610" r="24" fill="white"/>
+  <circle cx="688" cy="610" r="24" fill="white"/>
+  <circle cx="512" cy="710" r="24" fill="white"/>
+</svg>

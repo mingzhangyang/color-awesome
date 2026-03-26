@@ -3,17 +3,22 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Color Awesome – Free Color Converter, Picker &amp; Palette Builder</title>
   <meta name="description"
     content="Color Awesome: instantly convert HEX, RGB, HSL, HSV, CMYK &amp; LAB colors, pick colors from any image, build &amp; export palettes, and check WCAG contrast — all free, no login required.">
   <meta name="keywords"
     content="color converter, hex to rgb, rgb to hsl, color picker, palette generator, wcag contrast checker, color extraction, image color picker, design tools, online color tool">
   <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+  <meta name="googlebot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
   <meta name="author" content="Orangely">
   <meta name="application-name" content="Color Awesome">
-  <meta name="theme-color" content="#3b82f6">
+  <meta name="theme-color" content="#0f766e">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
   <link rel="canonical" href="https://color-awesome.orangely.xyz/">
+  <link rel="alternate" hreflang="en" href="https://color-awesome.orangely.xyz/">
+  <link rel="alternate" hreflang="x-default" href="https://color-awesome.orangely.xyz/">
+  <link rel="sitemap" type="application/xml" title="Sitemap" href="https://color-awesome.orangely.xyz/sitemap.xml">
 
   <!-- Open Graph -->
   <meta property="og:type" content="website">
@@ -22,8 +27,10 @@
     content="Convert HEX, RGB, HSL, HSV, CMYK &amp; LAB; pick colors from images; build &amp; export palettes; verify WCAG contrast — all in one free web app.">
   <meta property="og:url" content="https://color-awesome.orangely.xyz/">
   <meta property="og:site_name" content="Color Awesome">
-  <meta property="og:image" content="https://color-awesome.orangely.xyz/social-card.png">
-  <meta property="og:image:alt" content="Color Awesome – color converter and palette builder interface">
+  <meta property="og:image" content="https://color-awesome.orangely.xyz/og-card.png">
+  <meta property="og:image:secure_url" content="https://color-awesome.orangely.xyz/og-card.png">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:alt" content="Color Awesome brand card with key color-tool features">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:locale" content="en_US">
@@ -33,8 +40,9 @@
   <meta name="twitter:title" content="Color Awesome – Free Color Converter, Picker &amp; Palette Builder">
   <meta name="twitter:description"
     content="Convert colors, pick from images, build palettes and check WCAG contrast — free, instant, no login.">
-  <meta name="twitter:image" content="https://color-awesome.orangely.xyz/social-card.png">
-  <meta name="twitter:image:alt" content="Color Awesome interface screenshot">
+  <meta name="twitter:url" content="https://color-awesome.orangely.xyz/">
+  <meta name="twitter:image" content="https://color-awesome.orangely.xyz/og-card.png">
+  <meta name="twitter:image:alt" content="Color Awesome brand card with key color-tool features">
 
   <!-- Structured Data -->
   <script type="application/ld+json">
@@ -43,6 +51,8 @@
       "@type": "WebApplication",
       "name": "Color Awesome",
       "url": "https://color-awesome.orangely.xyz/",
+      "image": "https://color-awesome.orangely.xyz/app-icon.png",
+      "screenshot": "https://color-awesome.orangely.xyz/og-card.png",
       "description": "A free web app for color conversion (HEX, RGB, HSL, HSV, CMYK, LAB), image-based color picking, palette management, and WCAG contrast checking.",
       "applicationCategory": "DesignApplication",
       "operatingSystem": "Web",
@@ -64,16 +74,53 @@
         "name": "Orangely",
         "url": "https://orangely.xyz"
       },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Orangely",
+        "url": "https://orangely.xyz"
+      },
       "sameAs": [
         "https://github.com/mingzhangyang/color-awesome"
       ]
     }
-    </script>
+  </script>
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Color Awesome",
+      "url": "https://color-awesome.orangely.xyz/",
+      "inLanguage": "en",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Orangely",
+        "url": "https://orangely.xyz",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://color-awesome.orangely.xyz/app-icon.png"
+        }
+      }
+    }
+  </script>
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Orangely",
+      "url": "https://orangely.xyz",
+      "logo": "https://color-awesome.orangely.xyz/app-icon.png",
+      "sameAs": [
+        "https://github.com/mingzhangyang/color-awesome"
+      ]
+    }
+  </script>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="/app-icon.svg">
+  <link rel="icon" type="image/png" sizes="512x512" href="/app-icon.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/app-icon.png">
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6558783266514927"
     crossorigin="anonymous"></script>
   <!-- Google tag (gtag.js) -->

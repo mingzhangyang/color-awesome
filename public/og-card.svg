@@ -1,0 +1,107 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Color Awesome — Convert, Pick, Collect</title>
+  <desc id="desc">Open Graph card for Color Awesome, a color converter, image picker, and palette collection tool.</desc>
+
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F5FBF9"/>
+      <stop offset="0.5" stop-color="#EAF5F2"/>
+      <stop offset="1" stop-color="#FFF4E9"/>
+    </linearGradient>
+
+    <radialGradient id="blobA" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(230 140) rotate(41) scale(360 260)">
+      <stop stop-color="#0F766E" stop-opacity="0.34"/>
+      <stop offset="1" stop-color="#0F766E" stop-opacity="0"/>
+    </radialGradient>
+
+    <radialGradient id="blobB" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1030 500) rotate(-20) scale(340 250)">
+      <stop stop-color="#EA580C" stop-opacity="0.26"/>
+      <stop offset="1" stop-color="#EA580C" stop-opacity="0"/>
+    </radialGradient>
+
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0D9488"/>
+      <stop offset="0.55" stop-color="#C026D3"/>
+      <stop offset="1" stop-color="#2563EB"/>
+    </linearGradient>
+
+    <linearGradient id="brandTitle" x1="122" y1="82" x2="290" y2="82" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0D9488"/>
+      <stop offset="0.52" stop-color="#C026D3"/>
+      <stop offset="1" stop-color="#2563EB"/>
+    </linearGradient>
+
+    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+      <path d="M 32 0 L 0 0 0 32" stroke="#0F172A" stroke-opacity="0.045" stroke-width="1"/>
+    </pattern>
+
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%" filterUnits="objectBoundingBox">
+      <feDropShadow dx="0" dy="16" stdDeviation="18" flood-color="#0F172A" flood-opacity="0.16"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#grid)"/>
+  <ellipse cx="230" cy="140" rx="360" ry="260" fill="url(#blobA)"/>
+  <ellipse cx="1030" cy="500" rx="340" ry="250" fill="url(#blobB)"/>
+
+  <rect x="72" y="66" width="258" height="42" rx="21" fill="#FFFFFF" fill-opacity="0.9"/>
+  <circle cx="98" cy="87" r="10" fill="url(#accent)"/>
+  <text x="122" y="94" fill="url(#brandTitle)" font-family="'Space Grotesk', 'Inter', 'Segoe UI', sans-serif" font-size="21" font-weight="700" letter-spacing="-0.1">Color Awesome</text>
+
+  <text x="72" y="214" fill="#0D9488" font-family="'Space Grotesk', 'Inter', 'Segoe UI', sans-serif" font-size="70" font-weight="700" letter-spacing="-0.6">Convert.</text>
+  <text x="72" y="296" fill="#C026D3" font-family="'Space Grotesk', 'Inter', 'Segoe UI', sans-serif" font-size="70" font-weight="700" letter-spacing="-0.6">Pick.</text>
+  <text x="72" y="378" fill="#2563EB" font-family="'Space Grotesk', 'Inter', 'Segoe UI', sans-serif" font-size="70" font-weight="700" letter-spacing="-0.6">Collect.</text>
+
+  <text x="72" y="436" fill="#475569" font-family="'Space Grotesk', 'Inter', 'Segoe UI', sans-serif" font-size="22" font-weight="500" letter-spacing="0.1">Professional color workflow in one fast web app.</text>
+
+  <g transform="translate(72 482)">
+    <rect x="0" y="0" width="215" height="44" rx="22" fill="#E6FBF8"/>
+    <text x="28" y="29" fill="#0D9488" font-family="'Space Grotesk', 'Inter', 'Segoe UI', sans-serif" font-size="19" font-weight="600" letter-spacing="0.1">HEX • RGB • HSL</text>
+
+    <rect x="230" y="0" width="222" height="44" rx="22" fill="#F9E8FF"/>
+    <text x="258" y="29" fill="#C026D3" font-family="'Space Grotesk', 'Inter', 'Segoe UI', sans-serif" font-size="19" font-weight="600" letter-spacing="0.1">Image Sampling</text>
+
+    <rect x="467" y="0" width="236" height="44" rx="22" fill="#EAF0FF"/>
+    <text x="494" y="29" fill="#2563EB" font-family="'Space Grotesk', 'Inter', 'Segoe UI', sans-serif" font-size="19" font-weight="600" letter-spacing="0.1">Palette Manager</text>
+  </g>
+
+  <g transform="translate(124 16)">
+    <g transform="scale(0.9)">
+      <g filter="url(#softShadow)">
+        <rect x="748" y="86" width="384" height="458" rx="30" fill="#FFFFFF" fill-opacity="0.97"/>
+      </g>
+
+      <rect x="772" y="118" width="336" height="112" rx="18" fill="#F8FAFC"/>
+      <rect x="792" y="138" width="170" height="14" rx="7" fill="#0F172A" fill-opacity="0.12"/>
+      <rect x="792" y="160" width="132" height="14" rx="7" fill="#0F172A" fill-opacity="0.09"/>
+      <rect x="792" y="184" width="80" height="14" rx="7" fill="#0F172A" fill-opacity="0.09"/>
+
+      <g transform="translate(982 138)">
+        <rect x="0" y="0" width="104" height="16" rx="8" fill="#0F766E"/>
+        <rect x="0" y="24" width="104" height="16" rx="8" fill="#1EAFA3"/>
+        <rect x="0" y="48" width="104" height="16" rx="8" fill="#EA580C"/>
+      </g>
+
+      <g transform="translate(772 260)">
+        <rect x="0" y="0" width="336" height="260" rx="22" fill="#F8FAFC"/>
+
+        <rect x="24" y="24" width="288" height="24" rx="12" fill="#0F172A" fill-opacity="0.07"/>
+
+        <g transform="translate(24 70)">
+          <rect x="0" y="0" width="56" height="56" rx="12" fill="#0F766E"/>
+          <rect x="68" y="0" width="56" height="56" rx="12" fill="#14B8A6"/>
+          <rect x="136" y="0" width="56" height="56" rx="12" fill="#F97316"/>
+          <rect x="204" y="0" width="56" height="56" rx="12" fill="#FDBA74"/>
+        </g>
+
+        <g transform="translate(24 146)">
+          <rect x="0" y="0" width="56" height="56" rx="12" fill="#1D4ED8"/>
+          <rect x="68" y="0" width="56" height="56" rx="12" fill="#22C55E"/>
+          <rect x="136" y="0" width="56" height="56" rx="12" fill="#EF4444"/>
+          <rect x="204" y="0" width="56" height="56" rx="12" fill="#111827"/>
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>
