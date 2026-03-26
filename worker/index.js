@@ -34,6 +34,8 @@ function getCacheControl(pathname) {
         pathname === '/image-picker' ||
         pathname === '/collection' ||
         pathname === '/palette' ||
+        pathname === '/tools' ||
+        pathname.startsWith('/tools/') ||
         pathname.endsWith('.html')
     ) {
         return 'public, max-age=0, must-revalidate'

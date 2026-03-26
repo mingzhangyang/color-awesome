@@ -16,6 +16,7 @@ export class KeyboardShortcuts {
     this.shortcuts.set('1', () => this.app.switchView('converter'))
     this.shortcuts.set('2', () => this.app.switchView('image-picker'))
     this.shortcuts.set('3', () => this.app.switchView('collection'))
+    this.shortcuts.set('4', () => this.app.switchView('tools'))
     
     // Utility shortcuts
     this.shortcuts.set('ctrl+k', () => this.showCommandPalette())
@@ -101,6 +102,10 @@ export class KeyboardShortcuts {
               <span class="font-medium">Color Collection</span>
               <span class="text-gray-500 ml-2">Press 3</span>
             </div>
+            <div class="command-item p-2 hover:bg-gray-100 rounded cursor-pointer" data-action="tools">
+              <span class="font-medium">Tools</span>
+              <span class="text-gray-500 ml-2">Press 4</span>
+            </div>
           </div>
         </div>
       </div>
@@ -156,6 +161,7 @@ export class KeyboardShortcuts {
                 ${this.createShortcutItem('1', 'Color Converter')}
                 ${this.createShortcutItem('2', 'Image Color Picker')}
                 ${this.createShortcutItem('3', 'Color Collection')}
+                ${this.createShortcutItem('4', 'Tools')}
               </div>
             </div>
             

@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>OG SVG 转 PNG 工具</title>
+  <title>OG SVG to PNG Exporter</title>
   <style>
     :root {
       --bg: #f3faf8;
@@ -158,49 +158,49 @@
 <body>
   <div class="container">
     <section class="panel">
-      <h1>OG SVG 转 PNG</h1>
-      <p class="sub">默认加载 <code>/og-card.svg</code>。也可一键加载 <code>/app-icon.svg</code>，或上传任意 SVG 再导出 PNG。</p>
+      <h1>OG SVG to PNG</h1>
+      <p class="sub">Loads <code>/og-card.svg</code> by default. You can also load <code>/app-icon.svg</code> or upload any SVG, then export PNG.</p>
 
       <div class="group">
         <div class="row">
-          <button id="load-default" class="btn-secondary" type="button">加载默认 SVG</button>
-          <button id="load-app-icon" class="btn-secondary" type="button">加载应用图标 SVG</button>
+          <button id="load-default" class="btn-secondary" type="button">Load Default SVG</button>
+          <button id="load-app-icon" class="btn-secondary" type="button">Load App Icon SVG</button>
         </div>
       </div>
 
       <div class="group">
-        <label for="svg-file">上传 SVG 文件</label>
+        <label for="svg-file">Upload SVG File</label>
         <input id="svg-file" type="file" accept=".svg,image/svg+xml" />
       </div>
 
       <div class="group row">
         <div>
-          <label for="png-width">PNG 宽度</label>
+          <label for="png-width">PNG Width</label>
           <input id="png-width" type="number" min="1" value="1200" />
         </div>
         <div>
-          <label for="png-height">PNG 高度</label>
+          <label for="png-height">PNG Height</label>
           <input id="png-height" type="number" min="1" value="630" />
         </div>
       </div>
 
       <div class="group">
-        <label for="file-name">文件名（不含扩展名）</label>
+        <label for="file-name">File Name (without extension)</label>
         <input id="file-name" type="text" value="og-card" />
       </div>
 
       <div class="group">
-        <button id="download-png" class="btn-primary" type="button">下载 PNG</button>
+        <button id="download-png" class="btn-primary" type="button">Download PNG</button>
       </div>
 
-      <div id="status" class="status">等待加载 SVG...</div>
+      <div id="status" class="status">Waiting for SVG to load...</div>
     </section>
 
     <section class="panel preview-wrap">
       <div class="preview-box">
-        <img id="svg-preview" alt="SVG 预览" />
+        <img id="svg-preview" alt="SVG preview" />
       </div>
-      <p class="hint">提示：导出尺寸建议保持 1200×630（标准 OG 图）。</p>
+      <p class="hint">Tip: Keep export size at 1200x630 for standard OG images.</p>
     </section>
   </div>
 
@@ -274,7 +274,7 @@
       parseSvgSize(svgText)
       setPreview(svgText)
       fileNameEl.value = name.replace(/\.svg$/i, '')
-      setStatus(`SVG 已加载：${fileNameEl.value}.svg`)
+      setStatus(`SVG loaded: ${fileNameEl.value}.svg`)
     }
 
     async function loadDefaultSvg() {
@@ -284,7 +284,7 @@
         const svgText = await res.text()
         await loadSvgFromText(svgText, 'og-card')
       } catch (err) {
-        setStatus(`加载默认 SVG 失败：${err.message}`, true)
+        setStatus(`Failed to load default SVG: ${err.message}`, true)
       }
     }
 
@@ -295,20 +295,20 @@
         const svgText = await res.text()
         await loadSvgFromText(svgText, 'app-icon')
       } catch (err) {
-        setStatus(`加载应用图标 SVG 失败：${err.message}`, true)
+        setStatus(`Failed to load app icon SVG: ${err.message}`, true)
       }
     }
 
     async function exportToPng() {
       if (!currentSvgText) {
-        setStatus('请先加载 SVG。', true)
+        setStatus('Please load an SVG first.', true)
         return
       }
 
       const width = parseInt(widthEl.value, 10)
       const height = parseInt(heightEl.value, 10)
       if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
-        setStatus('PNG 宽高必须是正整数。', true)
+        setStatus('PNG width and height must be positive integers.', true)
         return
       }
 
@@ -327,7 +327,7 @@
         canvasEl.toBlob((pngBlob) => {
           URL.revokeObjectURL(svgUrl)
           if (!pngBlob) {
-            setStatus('PNG 导出失败，请重试。', true)
+            setStatus('PNG export failed. Please try again.', true)
             return
           }
 
@@ -341,13 +341,13 @@
           a.remove()
           URL.revokeObjectURL(downloadUrl)
 
-          setStatus(`PNG 已导出：${baseName}-${width}x${height}.png`)
+          setStatus(`PNG exported: ${baseName}-${width}x${height}.png`)
         }, 'image/png')
       }
 
       image.onerror = () => {
         URL.revokeObjectURL(svgUrl)
-        setStatus('SVG 渲染失败，无法导出 PNG。', true)
+        setStatus('SVG render failed. Unable to export PNG.', true)
       }
 
       image.src = svgUrl
@@ -365,7 +365,7 @@
         const text = await file.text()
         await loadSvgFromText(text, file.name)
       } catch (err) {
-        setStatus(`读取文件失败：${err.message}`, true)
+        setStatus(`Failed to read file: ${err.message}`, true)
       }
     })
 

@@ -3,12 +3,14 @@ import { MobileNavigation } from './components/MobileNavigation.js'
 import { ColorConverter } from './components/ColorConverter.js'
 import { ImageColorPicker } from './components/ImageColorPicker.js'
 import { ColorCollection } from './components/ColorCollection.js'
+import { ToolsHub } from './components/ToolsHub.js'
+import { DEFAULT_TOOL_ID, TOOLS_REGISTRY, TOOL_IDS } from './components/toolsRegistry.js'
 import { KeyboardShortcuts } from './utils/KeyboardShortcuts.js'
 import { UIEnhancements } from './utils/UIEnhancements.js'
 import { PerformanceOptimizer } from './utils/PerformanceOptimizer.js'
 import { AdComponent, refreshAdsOnNavigation } from './components/AdComponent.js'
 
-const VALID_VIEWS = ['converter', 'image-picker', 'collection']
+const VALID_VIEWS = ['converter', 'image-picker', 'collection', 'tools']
 
 export class App {
   constructor() {
@@ -24,11 +26,16 @@ export class App {
 
     this.initialConverterState = {}
     this.initialCollectionState = {}
+    this.initialToolsState = {}
     this.converterLandingPath = '/convert'
     this.converterShareState = {
       hex: '#3b82f6',
       contrast: '#ffffff'
     }
+    this.toolsShareState = {
+      toolId: DEFAULT_TOOL_ID
+    }
+    this.isToolsMenuExpanded = this.getInitialToolsMenuState()
   }
 
   init() {
@@ -50,6 +57,7 @@ export class App {
       converterPath: '/convert',
       converterState: {},
       collectionState: {},
+      toolsState: {},
       pathname
     }
 
@@ -70,6 +78,15 @@ export class App {
     } else if (pathname === '/convert') {
       parsed.view = 'converter'
       parsed.converterPath = '/convert'
+    } else if (pathname === '/tools') {
+      parsed.view = 'tools'
+    } else if (pathname.startsWith('/tools/')) {
+      parsed.view = 'tools'
+      const pathToolId = pathname.replace('/tools/', '')
+      const normalizedToolId = this.normalizeToolId(pathToolId)
+      if (normalizedToolId) {
+        parsed.toolsState.toolId = normalizedToolId
+      }
     } else if (pathname === '/') {
       parsed.view = 'converter'
       parsed.converterPath = '/convert'
@@ -77,15 +94,24 @@ export class App {
 
     const hex = this.normalizeHex(params.get('hex') || params.get('color'))
     const contrast = this.normalizeHex(params.get('compare') || params.get('contrast'))
+    const toolId = this.normalizeToolId(params.get('tool'))
 
     if (hex) parsed.converterState.hex = hex
     if (contrast) parsed.converterState.contrast = contrast
+    if (toolId) parsed.toolsState.toolId = toolId
 
     if (VALID_VIEWS.includes(hashView)) {
       parsed.view = hashView
       if (hashView === 'converter') {
         parsed.converterPath = '/convert'
       }
+      if (hashView === 'tools' && !parsed.toolsState.toolId) {
+        parsed.toolsState.toolId = DEFAULT_TOOL_ID
+      }
+    }
+
+    if (parsed.view === 'tools' && !parsed.toolsState.toolId) {
+      parsed.toolsState.toolId = DEFAULT_TOOL_ID
     }
 
     return parsed
@@ -125,6 +151,7 @@ export class App {
       parsed.converterState?.hex || '',
       parsed.converterState?.contrast || '',
       parsed.converterState?.focusSection || '',
+      parsed.toolsState?.toolId || '',
       parsed.pathname,
       sharedPaletteSignature
     ].join('|')
@@ -144,6 +171,13 @@ export class App {
 
     if (!/^#[0-9a-f]{6}$/.test(hex)) return null
     return hex
+  }
+
+  normalizeToolId(value) {
+    if (!value || typeof value !== 'string') return null
+    const toolId = value.trim().toLowerCase()
+    if (!toolId) return null
+    return TOOL_IDS.has(toolId) ? toolId : null
   }
 
   initializeEnhancements() {
@@ -273,7 +307,13 @@ export class App {
   }
 
   initializeComponents() {
-    this.navigation = new Navigation(this.currentView, (view) => this.switchView(view))
+    this.navigation = new Navigation(this.currentView, (view) => this.switchView(view), {
+      tools: TOOLS_REGISTRY,
+      activeToolId: this.toolsShareState.toolId,
+      toolsExpanded: this.isToolsMenuExpanded,
+      onToolChange: (toolId) => this.handleSidebarToolSelection(toolId),
+      onToolsExpandChange: (expanded) => this.setToolsMenuExpanded(expanded)
+    })
     this.navigation.render()
 
     this.setupLayoutControls()
@@ -329,6 +369,16 @@ export class App {
         collection.render(newContent)
         break
       }
+      case 'tools': {
+        const activeToolId = this.normalizeToolId(this.toolsShareState.toolId) || DEFAULT_TOOL_ID
+        this.toolsShareState.toolId = activeToolId
+        this.initialToolsState.toolId = activeToolId
+        const toolsHub = new ToolsHub({
+          initialToolId: activeToolId
+        })
+        toolsHub.render(newContent)
+        break
+      }
       default:
         newContent.innerHTML = '<div class="text-center">View not found</div>'
     }
@@ -370,6 +420,11 @@ export class App {
     if (view === 'converter') {
       this.converterLandingPath = '/convert'
       this.initialConverterState.focusSection = ''
+    } else if (view === 'tools') {
+      this.setToolsMenuExpanded(true)
+      const toolId = this.normalizeToolId(this.toolsShareState.toolId) || DEFAULT_TOOL_ID
+      this.toolsShareState.toolId = toolId
+      this.initialToolsState.toolId = toolId
     }
 
     this.previousView = this.currentView
@@ -383,6 +438,7 @@ export class App {
     if (this.navigation) {
       this.navigation.updateActiveView(view)
     }
+    this.syncToolsNavigationState()
 
     refreshAdsOnNavigation()
 
@@ -421,6 +477,29 @@ export class App {
     this.updateSeoMetadata('converter')
   }
 
+  handleToolsStateChange(state) {
+    if (!state) return
+
+    const normalizedToolId = this.normalizeToolId(state.toolId) || DEFAULT_TOOL_ID
+    this.toolsShareState = {
+      ...this.toolsShareState,
+      toolId: normalizedToolId
+    }
+
+    if (this.currentView !== 'tools') return
+
+    const targetUrl = this.buildToolsUrl(this.toolsShareState)
+    const currentUrl = `${window.location.pathname}${window.location.search}`
+
+    if (targetUrl !== currentUrl) {
+      window.history.replaceState({ view: 'tools' }, '', targetUrl)
+    }
+
+    this.lastLocationSignature = this.buildLocationSignature(this.parseLocationState(window.location))
+    this.updateSeoMetadata('tools')
+    this.syncToolsNavigationState()
+  }
+
   buildConverterUrl(state = this.converterShareState) {
     const path = this.converterLandingPath || '/convert'
     const hex = this.normalizeHex(state.hex) || '#3b82f6'
@@ -452,7 +531,53 @@ export class App {
       return '/collection'
     }
 
+    if (view === 'tools') {
+      return this.buildToolsUrl(this.toolsShareState)
+    }
+
     return '/convert'
+  }
+
+  buildToolsUrl(state = this.toolsShareState) {
+    const toolId = this.normalizeToolId(state.toolId) || DEFAULT_TOOL_ID
+    if (toolId && toolId !== DEFAULT_TOOL_ID) {
+      return `/tools/${toolId}`
+    }
+    return '/tools'
+  }
+
+  handleSidebarToolSelection(toolId) {
+    const normalizedToolId = this.normalizeToolId(toolId) || DEFAULT_TOOL_ID
+    this.toolsShareState.toolId = normalizedToolId
+    this.initialToolsState.toolId = normalizedToolId
+    this.setToolsMenuExpanded(true)
+
+    if (this.currentView !== 'tools') {
+      this.switchView('tools')
+      return
+    }
+
+    this.renderCurrentView()
+    this.handleToolsStateChange({ toolId: normalizedToolId })
+  }
+
+  setToolsMenuExpanded(expanded) {
+    this.isToolsMenuExpanded = Boolean(expanded)
+    try {
+      localStorage.setItem('colorAwesome_tools_expanded', this.isToolsMenuExpanded ? '1' : '0')
+    } catch {
+      // Ignore storage write failure
+    }
+    this.syncToolsNavigationState()
+  }
+
+  syncToolsNavigationState() {
+    if (!this.navigation || typeof this.navigation.setToolsContext !== 'function') return
+    this.navigation.setToolsContext({
+      tools: TOOLS_REGISTRY,
+      activeToolId: this.toolsShareState.toolId,
+      toolsExpanded: this.isToolsMenuExpanded
+    })
   }
 
   setupEventListeners() {
@@ -470,6 +595,7 @@ export class App {
       this.currentView = parsed.view
       this.initialConverterState = parsed.converterState
       this.initialCollectionState = parsed.collectionState
+      this.initialToolsState = parsed.toolsState
       this.converterLandingPath = parsed.converterPath
 
       if (parsed.converterState.hex || parsed.converterState.contrast) {
@@ -477,6 +603,17 @@ export class App {
           ...this.converterShareState,
           ...parsed.converterState
         }
+      }
+
+      if (parsed.toolsState.toolId) {
+        this.toolsShareState = {
+          ...this.toolsShareState,
+          toolId: parsed.toolsState.toolId
+        }
+      }
+
+      if (parsed.view === 'tools') {
+        this.isToolsMenuExpanded = true
       }
 
       this.renderCurrentView()
@@ -523,6 +660,7 @@ export class App {
     this.currentView = parsed.view
     this.initialConverterState = parsed.converterState
     this.initialCollectionState = parsed.collectionState
+    this.initialToolsState = parsed.toolsState
     this.converterLandingPath = parsed.converterPath
 
     if (parsed.converterState.hex || parsed.converterState.contrast) {
@@ -530,6 +668,17 @@ export class App {
         ...this.converterShareState,
         ...parsed.converterState
       }
+    }
+
+    if (parsed.toolsState.toolId) {
+      this.toolsShareState = {
+        ...this.toolsShareState,
+        toolId: parsed.toolsState.toolId
+      }
+    }
+
+    if (parsed.view === 'tools') {
+      this.isToolsMenuExpanded = true
     }
 
     this.lastLocationSignature = this.buildLocationSignature(parsed)
@@ -542,6 +691,7 @@ export class App {
     if (this.navigation) {
       this.navigation.updateActiveView(view)
     }
+    this.syncToolsNavigationState()
   }
 
   updateSeoMetadata(view) {
@@ -574,6 +724,12 @@ export class App {
           description: 'Save, tag, search, and export reusable color palettes for design and development workflows.',
           url: `${baseUrl}/collection`
         }
+      }
+    } else if (view === 'tools') {
+      target = {
+        title: 'Color Tools – Utility Workspace | Color Awesome',
+        description: 'Open practical utility tools for color workflows, including the OG PNG exporter.',
+        url: `${baseUrl}${this.buildToolsUrl(this.toolsShareState)}`
       }
     } else if (window.location.pathname === '/hex-to-rgb') {
       target = {
@@ -632,6 +788,14 @@ export class App {
       return localStorage.getItem('colorAwesome_sidebar_collapsed') === '1'
     } catch {
       return false
+    }
+  }
+
+  getInitialToolsMenuState() {
+    try {
+      return localStorage.getItem('colorAwesome_tools_expanded') !== '0'
+    } catch {
+      return true
     }
   }
 

@@ -70,8 +70,8 @@ export class UIEnhancements {
 
       /* Micro-interactions */
       .btn-press {
-        transform: scale(0.95);
-        transition: transform 0.1s ease;
+        scale: 0.95;
+        transition: scale 0.1s ease;
       }
 
       .hover-lift {
@@ -211,19 +211,27 @@ export class UIEnhancements {
   }
 
   setupButtonAnimations() {
-    document.addEventListener('mousedown', (e) => {
-      if (e.target.matches('button, .btn, [role="button"]')) {
-        e.target.classList.add('btn-press')
-      }
+    let pressedButton = null
+
+    const releasePressedButton = () => {
+      if (!pressedButton) return
+      const button = pressedButton
+      pressedButton = null
+      setTimeout(() => {
+        button.classList.remove('btn-press')
+      }, 80)
+    }
+
+    document.addEventListener('pointerdown', (e) => {
+      if (!(e.target instanceof Element)) return
+      const button = e.target.closest('button, .btn, [role="button"]')
+      if (!button) return
+      pressedButton = button
+      button.classList.add('btn-press')
     })
 
-    document.addEventListener('mouseup', (e) => {
-      if (e.target.matches('button, .btn, [role="button"]')) {
-        setTimeout(() => {
-          e.target.classList.remove('btn-press')
-        }, 100)
-      }
-    })
+    document.addEventListener('pointerup', releasePressedButton)
+    document.addEventListener('pointercancel', releasePressedButton)
   }
 
   setupHoverEffects() {
